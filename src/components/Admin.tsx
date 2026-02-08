@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 import { CheckCircle, XCircle, Leaf, Users, Package, TrendingUp } from 'lucide-react';
 
@@ -27,7 +26,6 @@ interface DashboardStats {
 
 export default function Admin() {
   const { profile } = useAuth();
-  const { t } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -37,11 +35,14 @@ export default function Admin() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Admin role check - for now we use 'producer' as admin
+  const isAdmin = profile?.role === 'producer';
+
   useEffect(() => {
-    if (profile?.role === 'admin') {
+    if (isAdmin) {
       fetchDashboardData();
     }
-  }, [profile]);
+  }, [isAdmin]);
 
   const fetchDashboardData = async () => {
     try {
@@ -73,9 +74,9 @@ export default function Admin() {
 
       if (transactionsRes.error) throw transactionsRes.error;
 
-      const formattedTransactions = transactionsRes.data?.map(t => ({
+      const formattedTransactions = transactionsRes.data?.map((t: any) => ({
         ...t,
-        user: (t.user as any) || { full_name: 'Unknown', email: 'unknown@email.com' }
+        user: t.user || { full_name: 'Unknown', email: 'unknown@email.com' }
       })) || [];
 
       setTransactions(formattedTransactions);
@@ -96,7 +97,7 @@ export default function Admin() {
     }
   };
 
-  const handleApprove = async (transactionId: string, weight: number, userId: string) => {
+  const handleApprove = async (transactionId: string, weight: number, _userId: string) => {
     try {
       const pointsEarned = Math.floor(weight / 10);
 
@@ -114,8 +115,9 @@ export default function Admin() {
 
       alert('Transaksi berhasil disetujui! Poin user telah ditambahkan.');
       fetchDashboardData();
-    } catch (error: any) {
-      alert('Gagal menyetujui transaksi: ' + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert('Gagal menyetujui transaksi: ' + err.message);
     }
   };
 
@@ -138,12 +140,13 @@ export default function Admin() {
 
       alert('Transaksi berhasil ditolak.');
       fetchDashboardData();
-    } catch (error: any) {
-      alert('Gagal menolak transaksi: ' + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert('Gagal menolak transaksi: ' + err.message);
     }
   };
 
-  if (profile?.role !== 'admin') {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-2xl shadow-lg text-center">

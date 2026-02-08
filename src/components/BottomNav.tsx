@@ -1,7 +1,7 @@
-import { Bell, ShoppingBag, UploadCloud, Calculator, User, Home } from 'lucide-react';
+import { ShoppingBag, UploadCloud, User, Home, Scan } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products';
+type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
 
 interface BottomNavProps {
   currentPage: NavigationPage;
@@ -21,7 +21,7 @@ export default function BottomNav({ currentPage, onNavigate, userRole }: BottomN
     },
     { id: 'marketplace' as NavigationPage, labelKey: 'navMarketplace', icon: ShoppingBag, isCenter: false },
     { id: 'supply' as NavigationPage, labelKey: 'navSupply', icon: UploadCloud, isCenter: true },
-    { id: 'calculator' as NavigationPage, labelKey: 'navCalculator', icon: Calculator, isCenter: false },
+    { id: 'scan' as NavigationPage, labelKey: 'navScan', icon: Scan, isCenter: false },
     { id: 'profile' as NavigationPage, labelKey: 'navProfile', icon: User, isCenter: false }
   ];
 

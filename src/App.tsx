@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useProducts } from './hooks/useProducts';
-import { useStatistics } from './hooks/useStatistics';
 import Home from './components/Home';
 import Marketplace from './components/Marketplace';
 import Supply from './components/Supply';
@@ -13,13 +12,14 @@ import Auth from './components/Auth';
 import LandingPage from './components/LandingPage';
 import BottomNav from './components/BottomNav';
 import ManageProducts from './pages/ManageProducts';
+import AIScan from './components/AIScan';
+import RobotCommandCenter from './components/RobotCommandCenter';
 
-type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products';
+type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
 
 function AppContent() {
-  const { user, session, profile, loading: authLoading } = useAuth();
+  const { session, profile, loading: authLoading } = useAuth();
   const { products, loading: productsLoading } = useProducts();
-  const { statistics, loading: statsLoading } = useStatistics();
   const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
   const [showAuth, setShowAuth] = useState(false);
 
@@ -40,6 +40,10 @@ function AppContent() {
     }
     return <Auth onBack={() => setShowAuth(false)} />;
   }
+
+  const handleNavigate = (page: NavigationPage) => {
+    setCurrentPage(page);
+  };
 
   const renderPage = () => {
     switch (currentPage) {
@@ -63,6 +67,10 @@ function AppContent() {
         return <ProducerDashboard />;
       case 'manage-products':
         return <ManageProducts />;
+      case 'scan':
+        return <AIScan />;
+      case 'robot':
+        return <RobotCommandCenter />;
       default:
         return <Home />;
     }
@@ -74,7 +82,7 @@ function AppContent() {
         {renderPage()}
         <BottomNav
           currentPage={currentPage}
-          onNavigate={setCurrentPage}
+          onNavigate={handleNavigate}
           userRole={profile?.role || 'public'}
         />
       </div>

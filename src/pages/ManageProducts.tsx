@@ -1,11 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Plus, Trash2, Package, Loader2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  stock: number;
+  location: string;
+  contact_info: string;
+  image: string;
+  description?: string;
+}
+
 export default function ManageProducts() {
   const { t } = useLanguage();
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -16,10 +28,10 @@ export default function ManageProducts() {
     price: '',
     stock: '',
     location: '',
-    contact_info: '', // WA State
+    contact_info: '',
     description: ''
   });
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -46,24 +58,26 @@ export default function ManageProducts() {
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id: string) {
     if (!confirm('Yakin ingin menghapus produk ini?')) return;
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       fetchProducts();
-    } catch (error) {
-      alert('Gagal menghapus: ' + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert('Gagal menghapus: ' + err.message);
     }
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!imageFile) return alert(t('productForm.errorPhoto'));
     
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
       
       // 1. Upload Gambar
       const fileExt = imageFile.name.split('.').pop();
@@ -88,7 +102,7 @@ export default function ManageProducts() {
         price: Number(formData.price),
         stock: Number(formData.stock),
         location: formData.location,
-        contact_info: formData.contact_info, // WA
+        contact_info: formData.contact_info,
         image: publicUrl,
         description: formData.description
       }]);
@@ -103,8 +117,9 @@ export default function ManageProducts() {
       setImageFile(null);
       fetchProducts();
 
-    } catch (error) {
-      alert('Error: ' + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert('Error: ' + err.message);
     } finally {
       setUploading(false);
     }
@@ -213,7 +228,7 @@ export default function ManageProducts() {
                 />
               </div>
 
-              {/* WA (INI YANG DICARI) */}
+              {/* WA */}
               <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                 <label className="block text-sm font-bold text-green-800 mb-1">{t('productForm.labelWhatsApp')}</label>
                 <p className="text-xs text-green-700 mb-2">{t('productForm.helperWhatsApp')}</p>
@@ -223,11 +238,11 @@ export default function ManageProducts() {
                 />
               </div>
 
-              {/* UPLOAD GAMBAR (INI YANG DICARI) */}
+              {/* UPLOAD GAMBAR */}
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                 <label className="block text-sm font-bold text-blue-800 mb-1">{t('productForm.labelPhoto')}</label>
                 <input required type="file" accept="image/*" className="w-full text-sm"
-                  onChange={e => setImageFile(e.target.files[0])}
+                  onChange={e => setImageFile(e.target.files?.[0] || null)}
                 />
               </div>
 

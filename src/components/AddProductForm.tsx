@@ -50,7 +50,6 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
 
     try {
       const timestamp = Date.now();
-      const fileExt = imageFile.name.split('.').pop();
       const fileName = `marketplace/${timestamp}_${imageFile.name}`;
 
       console.log('Uploading to products bucket:', fileName);
