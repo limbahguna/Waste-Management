@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 import { Package, Clock, User, Scale, MapPin, TrendingUp, TreePine, CheckCircle, ImageIcon, Inbox, Phone, Camera } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
+import HowItWorks from './HowItWorks';
 
 interface HomeProps {
   onNavigateToScan?: () => void;
@@ -516,7 +517,7 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </div>
         )}
 
-        <div className="bg-green-50 border-l-4 border-green-400 rounded-xl p-5 shadow-sm">
+        <div className="bg-green-50 border-l-4 border-green-400 rounded-xl p-5 shadow-sm mb-6">
           <div className="flex items-start gap-3">
             <div className="text-2xl">💡</div>
             <div>
@@ -528,6 +529,9 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </div>
         </div>
       </div>
+
+      {/* How It Works Section - Bottom of Home */}
+      <HowItWorks />
     </div>
   );
 }
