@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
-import { CheckCircle, XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale } from 'lucide-react';
+import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -14,7 +14,7 @@ interface Transaction {
   profiles: {
     full_name: string;
     email: string;
-  };
+  } | null;
 }
 
 interface DashboardStats {
@@ -71,7 +71,19 @@ export default function ProducerDashboard() {
 
       if (transactionsRes.error) throw transactionsRes.error;
 
-      setTransactions(transactionsRes.data || []);
+      // Map the data to match our Transaction interface
+      const formattedTransactions: Transaction[] = (transactionsRes.data || []).map((t: any) => ({
+        id: t.id,
+        user_id: t.user_id,
+        waste_type: t.waste_type,
+        weight: t.weight,
+        address: t.address,
+        status: t.status,
+        created_at: t.created_at,
+        profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles
+      }));
+
+      setTransactions(formattedTransactions);
 
       const totalWeight = approvedTransactionsRes.data?.reduce((sum, t) => sum + t.weight, 0) || 0;
       const carbonCredits = Math.round(totalWeight * 2.5);
@@ -79,7 +91,7 @@ export default function ProducerDashboard() {
       setStats({
         totalTransactions: approvedTransactionsRes.data?.length || 0,
         totalCarbonCredits: carbonCredits,
-        pendingTransactions: transactionsRes.data?.length || 0,
+        pendingTransactions: formattedTransactions.length,
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -93,7 +105,7 @@ export default function ProducerDashboard() {
     try {
       const pointsEarned = Math.floor(weight * 10);
 
-      const [updateTransactionResult, updateProfileResult] = await Promise.all([
+      const [updateTransactionResult] = await Promise.all([
         supabase
           .from('transactions')
           .update({
@@ -114,9 +126,10 @@ export default function ProducerDashboard() {
 
       alert(`Transaksi berhasil disetujui! User mendapat ${pointsEarned} poin.`);
       fetchDashboardData();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error approving transaction:', error);
-      alert('Gagal menyetujui transaksi: ' + error.message);
+      alert('Gagal menyetujui transaksi: ' + err.message);
     } finally {
       setProcessingId(null);
     }
@@ -142,9 +155,10 @@ export default function ProducerDashboard() {
 
       alert('Transaksi berhasil ditolak.');
       fetchDashboardData();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error rejecting transaction:', error);
-      alert('Gagal menolak transaksi: ' + error.message);
+      alert('Gagal menolak transaksi: ' + err.message);
     } finally {
       setProcessingId(null);
     }

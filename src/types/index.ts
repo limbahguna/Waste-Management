@@ -2,14 +2,16 @@ export interface Product {
   id: string;
   name: string;
   seller: string;
+  sellerId?: string;
   price: number;
   location: string;
   stock: number;
-  category: 'wood-pellet' | 'wood-chip' | 'pks' | 'sawdust';
+  category: string;
   image: string;
   sellerPhone?: string;
   sellerAddress?: string;
   contactInfo?: string;
+  description?: string;
 }
 
 export interface SupplyData {
@@ -27,4 +29,4 @@ export interface Statistics {
   userPoints: number;
 }
 
-export type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile';
+export type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
