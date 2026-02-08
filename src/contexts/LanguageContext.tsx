@@ -23,7 +23,8 @@ const translations = {
     navRobot: 'Robot',
 
     // AI Scan translations
-    scanTitle: 'AI Biomass Scanner',
+    scanTitle: 'Pusat Analisis Biomassa',
+    scanSubtitle: 'Analisis kualitas biomassa dengan teknologi AI',
     scanDesc: 'Analisis kualitas biomass menggunakan AI grading',
     demoMode: 'Mode Demo',
     selectDemoMode: 'Pilih mode demo grading:',
@@ -42,6 +43,16 @@ const translations = {
     aiConfidence: 'Kepercayaan AI',
     aboutAIScan: 'Tentang AI Scan',
     aiScanInfo: 'Fitur ini menggunakan computer vision untuk menganalisis sampel biomass dan menentukan grade kualitas, kadar air, dan potensi energi. Aktifkan mode demo untuk simulasi proses scanning.',
+    uploadBtn: 'Upload Gambar',
+    uploadPrompt: 'Pilih atau letakkan foto di sini',
+    uploadHint: 'Mendukung format JPG, PNG, WEBP',
+    changeImage: 'Ganti',
+    analyzeBtn: 'Analisis',
+    analyzing: 'Menjalankan pipeline analisis...',
+    perceptionResult: 'Hasil Analisis',
+    biomassType: 'Jenis Biomassa',
+    contaminationAlert: 'Peringatan Kontaminasi',
+    analysisLog: 'Log Analisis',
 
     // Robot Command Center translations
     robotTitle: 'Robot Command Center',
@@ -371,7 +382,8 @@ const translations = {
     navRobot: 'Robot',
 
     // AI Scan translations
-    scanTitle: 'AI Biomass Scanner',
+    scanTitle: 'Biomass Analysis Center',
+    scanSubtitle: 'Analyze biomass quality with AI technology',
     scanDesc: 'Analyze biomass quality using AI-powered grading',
     demoMode: 'Demo Mode',
     selectDemoMode: 'Select demo grading mode:',
@@ -390,6 +402,16 @@ const translations = {
     aiConfidence: 'AI Confidence',
     aboutAIScan: 'About AI Scan',
     aiScanInfo: 'This feature uses computer vision to analyze biomass samples and determine their quality grade, moisture content, and energy potential. Enable demo mode to simulate the scanning process.',
+    uploadBtn: 'Upload Picture',
+    uploadPrompt: 'Select or drop a photo here',
+    uploadHint: 'Supports JPG, PNG, WEBP formats',
+    changeImage: 'Change',
+    analyzeBtn: 'Analyze',
+    analyzing: 'Running analysis pipeline...',
+    perceptionResult: 'Analysis Result',
+    biomassType: 'Biomass Type',
+    contaminationAlert: 'Contamination Alert',
+    analysisLog: 'Analysis Log',
 
     // Robot Command Center translations
     robotTitle: 'Robot Command Center',
