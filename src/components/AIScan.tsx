@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface PerceptionResult {
@@ -22,9 +22,18 @@ interface RobotCommand {
   perceptionData: PerceptionResult;
 }
 
+interface GroqSortingDecision {
+  robotCommand: string;
+  targetBin: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW' | 'EMERGENCY';
+  reasoning: string;
+  processingNotes: string;
+  estimatedValue: string;
+}
+
 interface ActionLogEntry {
   id: string;
-  type: 'perception' | 'decision' | 'action' | 'sync' | 'error';
+  type: 'perception' | 'decision' | 'action' | 'sync' | 'error' | 'groq';
   message: string;
   timestamp: Date;
   status: 'pending' | 'success' | 'error';
@@ -39,6 +48,7 @@ export default function AIScan() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [perception, setPerception] = useState<PerceptionResult | null>(null);
   const [_robotCommand, setRobotCommand] = useState<RobotCommand | null>(null);
+  const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(null);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
 
   const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending') => {
@@ -67,6 +77,7 @@ export default function AIScan() {
         setSelectedImage(e.target?.result as string);
         setPerception(null);
         setRobotCommand(null);
+        setGroqDecision(null);
         setActionLog([]);
       };
       reader.readAsDataURL(file);
@@ -158,7 +169,64 @@ export default function AIScan() {
         addLogEntry('decision', `Grade ${data.perception.grade} (${data.perception.confidence}% confidence)`, 'success');
       }
 
-      // Step 3: Action - Show Decision Result for robotics track
+      // Step 3: Call Groq Sorting Agent
+      const groqLogId = addLogEntry('groq', '🧠 Consulting Groq AI for optimal sorting route...');
+      
+      try {
+        const groqResponse = await fetch(`${SUPABASE_URL}/functions/v1/groq-sorting-agent`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            biomassData: {
+              grade: data.perception.grade,
+              biomassType: data.perception.biomassType,
+              moisture: parseFloat(data.perception.moisture),
+              calorificValue: parseFloat(data.perception.calorificValue),
+              confidence: data.perception.confidence,
+              contamination: {
+                detected: data.perception.contamination.detected,
+                types: data.perception.contamination.type ? [data.perception.contamination.type] : []
+              }
+            }
+          }),
+        });
+
+        if (groqResponse.ok) {
+          const groqData = await groqResponse.json();
+          if (groqData.success && groqData.decision) {
+            updateLogEntry(groqLogId, 'success');
+            addLogEntry('groq', `✅ Groq: ${groqData.decision.robotCommand} → ${groqData.decision.targetBin}`, 'success');
+            addLogEntry('groq', `📋 ${groqData.decision.reasoning}`, 'success');
+            setGroqDecision(groqData.decision);
+          } else {
+            throw new Error(groqData.error || 'Groq decision failed');
+          }
+        } else {
+          throw new Error(`Groq API error: ${groqResponse.status}`);
+        }
+      } catch (groqError) {
+        console.error('Groq sorting agent error:', groqError);
+        updateLogEntry(groqLogId, 'error');
+        addLogEntry('groq', '⚠️ Groq unavailable - using fallback rules', 'error');
+        // Fallback: use basic rule-based decision
+        const fallbackDecision: GroqSortingDecision = {
+          robotCommand: data.robotCommand.action,
+          targetBin: data.robotCommand.targetBin?.toString() || 'UNKNOWN',
+          priority: data.perception.contamination.detected ? 'EMERGENCY' : 
+                   data.perception.grade === 'A' ? 'HIGH' : 
+                   data.perception.grade === 'B' ? 'MEDIUM' : 'LOW',
+          reasoning: 'Fallback rule-based decision (Groq unavailable)',
+          processingNotes: 'Using default sorting rules',
+          estimatedValue: data.perception.grade === 'A' ? 'Premium' : 
+                         data.perception.grade === 'B' ? 'Standard' : 'Low'
+        };
+        setGroqDecision(fallbackDecision);
+      }
+
+      // Step 4: Action - Show Final Robot Command
       const actionLogId = addLogEntry('action', 'Generating robot command...');
       await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
 
@@ -173,7 +241,7 @@ export default function AIScan() {
       updateLogEntry(actionLogId, isEmergency ? 'error' : 'success');
       addLogEntry('action', actionMessages[data.robotCommand.action], isEmergency ? 'error' : 'success');
 
-      // Step 4: Sync status
+      // Step 5: Sync status
       if (data.vultrSyncStatus !== 'not_configured') {
         const syncLogId = addLogEntry('sync', 'Syncing with Vultr Central Brain...');
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -200,6 +268,7 @@ export default function AIScan() {
     setSelectedImage(null);
     setPerception(null);
     setRobotCommand(null);
+    setGroqDecision(null);
     setActionLog([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -222,9 +291,20 @@ export default function AIScan() {
     switch (type) {
       case 'perception': return <Scan className="w-4 h-4 text-green-500" />;
       case 'decision': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case 'groq': return <Brain className="w-4 h-4 text-purple-500" />;
       case 'action': return <Bot className="w-4 h-4 text-green-500" />;
       case 'sync': return <Zap className="w-4 h-4 text-green-500" />;
       default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'HIGH': return 'text-green-600 bg-green-100';
+      case 'MEDIUM': return 'text-yellow-600 bg-yellow-100';
+      case 'LOW': return 'text-orange-600 bg-orange-100';
+      case 'EMERGENCY': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -419,6 +499,62 @@ export default function AIScan() {
                 </div>
               </div>
             </div>
+
+            {/* Groq AI Decision Card */}
+            {groqDecision && (
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-md p-6 border border-purple-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Brain className="w-6 h-6 text-purple-600" />
+                  <h3 className="font-bold text-gray-800">Groq AI Sorting Decision</h3>
+                  <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(groqDecision.priority)}`}>
+                    {groqDecision.priority} PRIORITY
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Bot className="w-5 h-5 text-purple-600" />
+                      <span className="text-gray-700">Robot Command</span>
+                    </div>
+                    <span className="font-bold text-purple-800">{groqDecision.robotCommand}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-purple-600" />
+                      <span className="text-gray-700">Target Bin</span>
+                    </div>
+                    <span className="font-bold text-purple-800">{groqDecision.targetBin}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-amber-600" />
+                      <span className="text-gray-700">Estimated Value</span>
+                    </div>
+                    <span className="font-bold text-amber-700">{groqDecision.estimatedValue}</span>
+                  </div>
+
+                  <div className="p-3 bg-purple-100/50 rounded-xl">
+                    <p className="text-sm text-purple-800 font-medium mb-1">AI Reasoning:</p>
+                    <p className="text-sm text-purple-700">{groqDecision.reasoning}</p>
+                  </div>
+
+                  {groqDecision.processingNotes && (
+                    <div className="p-3 bg-indigo-100/50 rounded-xl">
+                      <p className="text-sm text-indigo-800 font-medium mb-1">Processing Notes:</p>
+                      <p className="text-sm text-indigo-700">{groqDecision.processingNotes}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600">
+                  <Brain className="w-3 h-3" />
+                  <span>Powered by Groq LLaMA 3.3 70B</span>
+                </div>
+              </div>
+            )}
 
           </div>
         )}
