@@ -234,10 +234,10 @@ export default function AIScan() {
       <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 pt-8 pb-6 px-6 rounded-b-3xl shadow-md text-white text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Scan className="w-6 h-6" />
-          <h1 className="text-2xl font-bold">Pusat Analisis Biomassa</h1>
+          <h1 className="text-2xl font-bold">{t('scanTitle')}</h1>
         </div>
         <p className="text-emerald-100 text-sm opacity-90">
-          Analisis kualitas biomassa dengan teknologi AI
+          {t('scanSubtitle')}
         </p>
       </div>
 
@@ -256,10 +256,10 @@ export default function AIScan() {
                 <div className="text-center p-6">
                   <Camera className="w-20 h-20 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-400 font-medium">
-                    {t('uploadPrompt') || 'Upload a biomass sample image'}
+                    {t('uploadPrompt')}
                   </p>
                   <p className="text-gray-500 text-sm mt-2">
-                    {t('uploadHint') || 'Supports JPG, PNG, WEBP formats'}
+                    {t('uploadHint')}
                   </p>
                 </div>
               )}
@@ -270,7 +270,7 @@ export default function AIScan() {
                   <div className="text-center">
                     <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-emerald-400 font-semibold animate-pulse">
-                      {t('analyzing') || 'Running perception pipeline...'}
+                      {t('analyzing')}
                     </p>
                   </div>
                 </div>
@@ -293,7 +293,7 @@ export default function AIScan() {
                   className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all"
                 >
                   <Upload className="w-5 h-5" />
-                  {t('uploadBtn') || 'Upload Image'}
+                  {t('uploadBtn')}
                 </button>
               ) : !perception ? (
                 <>
@@ -302,7 +302,7 @@ export default function AIScan() {
                     className="px-6 py-3 rounded-full font-bold flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white shadow-lg transition-all"
                   >
                     <Upload className="w-5 h-5" />
-                    {t('changeImage') || 'Change'}
+                    {t('changeImage')}
                   </button>
                   <button
                     onClick={processImage}
@@ -310,7 +310,7 @@ export default function AIScan() {
                     className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all disabled:opacity-50"
                   >
                     <Scan className="w-5 h-5" />
-                    {t('analyzeBtn') || 'Analyze'}
+                    {t('analyzeBtn')}
                   </button>
                 </>
               ) : (
@@ -319,7 +319,7 @@ export default function AIScan() {
                   className="px-8 py-3 rounded-full font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-lg flex items-center gap-2"
                 >
                   <Camera className="w-5 h-5" />
-                  {t('newScan') || 'New Scan'}
+                  {t('newScan')}
                 </button>
               )}
             </div>
@@ -331,7 +331,7 @@ export default function AIScan() {
           <div className="bg-gray-900 rounded-2xl shadow-md p-4 mb-6 border border-gray-700">
             <h3 className="font-bold text-white mb-3 flex items-center gap-2">
               <Scan className="w-5 h-5 text-emerald-400" />
-              Log Analisis
+              {t('analysisLog')}
             </h3>
             <div className="space-y-2">
               {actionLog
@@ -362,7 +362,7 @@ export default function AIScan() {
             {/* Grade Card */}
             <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800">{t('perceptionResult') || 'Perception Result'}</h3>
+                <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
                 <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception.grade)}`}>
                   Grade {perception.grade}
                 </span>
@@ -372,7 +372,7 @@ export default function AIScan() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Scan className="w-5 h-5 text-emerald-600" />
-                    <span className="text-gray-700">{t('biomassType') || 'Biomass Type'}</span>
+                    <span className="text-gray-700">{t('biomassType')}</span>
                   </div>
                   <span className="font-bold text-gray-800">{perception.biomassType}</span>
                 </div>
@@ -380,7 +380,7 @@ export default function AIScan() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Droplets className="w-5 h-5 text-blue-600" />
-                    <span className="text-gray-700">{t('moisture') || 'Moisture Content'}</span>
+                    <span className="text-gray-700">{t('moisture')}</span>
                   </div>
                   <span className="font-bold text-gray-800">{perception.moisture}</span>
                 </div>
@@ -388,7 +388,7 @@ export default function AIScan() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-yellow-600" />
-                    <span className="text-gray-700">{t('calorificValue') || 'Calorific Value'}</span>
+                    <span className="text-gray-700">{t('calorificValue')}</span>
                   </div>
                   <span className="font-bold text-gray-800">{perception.calorificValue}</span>
                 </div>
@@ -397,7 +397,7 @@ export default function AIScan() {
                   <div className="p-4 bg-red-50 rounded-xl border border-red-200">
                     <div className="flex items-center gap-2 mb-1">
                       <AlertTriangle className="w-5 h-5 text-red-600" />
-                      <span className="font-bold text-red-800">{t('contaminationAlert') || 'Contamination Alert'}</span>
+                      <span className="font-bold text-red-800">{t('contaminationAlert')}</span>
                     </div>
                     <p className="text-red-700">
                       {perception.contamination.type} detected - Manual inspection required
@@ -406,7 +406,7 @@ export default function AIScan() {
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{t('aiConfidence') || 'AI Confidence'}</span>
+                  <span className="text-sm text-gray-600">{t('aiConfidence')}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
