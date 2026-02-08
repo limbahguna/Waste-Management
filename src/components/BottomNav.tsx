@@ -1,4 +1,4 @@
-import { ShoppingBag, UploadCloud, User, Home, Scan } from 'lucide-react';
+import { ShoppingBag, UploadCloud, User, Home, Calculator } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
@@ -12,6 +12,7 @@ interface BottomNavProps {
 export default function BottomNav({ currentPage, onNavigate, userRole }: BottomNavProps) {
   const { t } = useLanguage();
 
+  // 5 tabs: Beranda, Pasar, Setor (center), Kalkulator, Profil
   const navItems = [
     {
       id: 'home' as NavigationPage,
@@ -21,9 +22,17 @@ export default function BottomNav({ currentPage, onNavigate, userRole }: BottomN
     },
     { id: 'marketplace' as NavigationPage, labelKey: 'navMarketplace', icon: ShoppingBag, isCenter: false },
     { id: 'supply' as NavigationPage, labelKey: 'navSupply', icon: UploadCloud, isCenter: true },
-    { id: 'scan' as NavigationPage, labelKey: 'navScan', icon: Scan, isCenter: false },
+    { id: 'calculator' as NavigationPage, labelKey: 'navCalculator', icon: Calculator, isCenter: false },
     { id: 'profile' as NavigationPage, labelKey: 'navProfile', icon: User, isCenter: false }
   ];
+
+  // Haptic feedback simulation
+  const handleNavigate = (page: NavigationPage) => {
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+    onNavigate(page);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
@@ -35,17 +44,17 @@ export default function BottomNav({ currentPage, onNavigate, userRole }: BottomN
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => handleNavigate(item.id)}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                 item.isCenter
                   ? 'relative'
                   : ''
               } ${
-                isActive ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'
+                isActive ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
               {item.isCenter ? (
-                <div className={`absolute -top-6 ${isActive ? 'bg-green-500' : 'bg-green-400'} hover:bg-green-500 text-white rounded-full p-3 shadow-lg transition-all flex flex-col items-center justify-center`}>
+                <div className={`absolute -top-6 ${isActive ? 'bg-emerald-500' : 'bg-emerald-400'} hover:bg-emerald-500 text-white rounded-full p-3 shadow-lg transition-all flex flex-col items-center justify-center`}>
                   <Icon className="w-6 h-6" />
                   <span className="text-[10px] font-bold mt-0.5 leading-none">
                     {t(item.labelKey)}
@@ -60,7 +69,7 @@ export default function BottomNav({ currentPage, onNavigate, userRole }: BottomN
                 </>
               )}
               {isActive && !item.isCenter && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-green-400 rounded-t-full" />
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-400 rounded-t-full" />
               )}
             </button>
           );

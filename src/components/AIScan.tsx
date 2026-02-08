@@ -30,7 +30,7 @@ interface ActionLogEntry {
   status: 'pending' | 'success' | 'error';
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
 export default function AIScan() {
   const { t } = useLanguage();
@@ -86,20 +86,61 @@ export default function AIScan() {
       // Extract base64 data from data URL
       const base64Data = selectedImage.split(',')[1];
 
+      // Get auth token from localStorage
+      const supabaseAuth = localStorage.getItem('sb-ntcgtsnufvhtgaejuuzv-auth-token');
+      let authToken = '';
+      if (supabaseAuth) {
+        try {
+          const parsed = JSON.parse(supabaseAuth);
+          authToken = parsed?.access_token || '';
+        } catch (e) {
+          console.error('Failed to parse auth token');
+        }
+      }
+
       const response = await fetch(`${SUPABASE_URL}/functions/v1/biomass-perception`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({ imageBase64: base64Data }),
       });
 
+      // Handle non-OK response properly
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Analysis failed');
+        let errorMessage = 'Analysis failed';
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = `Server error: ${response.status}`;
+          }
+        } else {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      // Safely parse JSON response
+      const responseText = await response.text();
+      if (!responseText || responseText.trim() === '') {
+        throw new Error('Empty response from server');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response:', responseText);
+        throw new Error('Invalid response from server');
+      }
+
+      if (!data.perception || !data.robotCommand) {
+        throw new Error('Incomplete response from server');
+      }
 
       // Update perception log
       updateLogEntry(perceptionLogId, 'success');
@@ -117,15 +158,15 @@ export default function AIScan() {
         addLogEntry('decision', `Grade ${data.perception.grade} (${data.perception.confidence}% confidence)`, 'success');
       }
 
-      // Step 3: Action
+      // Step 3: Action - Show Decision Result for robotics track
       const actionLogId = addLogEntry('action', 'Generating robot command...');
       await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
 
       const actionMessages: Record<string, string> = {
-        MOVE_TO_BIN_1: 'Moving Robotic Arm to Bin 1 (Premium)',
-        MOVE_TO_BIN_2: 'Moving Robotic Arm to Bin 2 (Standard)',
-        REJECT_TO_CONVEYOR: 'Rejecting to Conveyor Belt',
-        EMERGENCY_STOP: '🚨 EMERGENCY STOP - Manual inspection required',
+        MOVE_TO_BIN_1: '✅ Action: MOVE_TO_BIN_1 (Premium Grade A)',
+        MOVE_TO_BIN_2: '✅ Action: MOVE_TO_BIN_2 (Standard Grade B)',
+        REJECT_TO_CONVEYOR: '⚠️ Action: REJECT_TO_CONVEYOR (Low Quality)',
+        EMERGENCY_STOP: '🚨 Action: EMERGENCY STOP - Manual inspection required',
       };
 
       const isEmergency = data.robotCommand.action === 'EMERGENCY_STOP';
