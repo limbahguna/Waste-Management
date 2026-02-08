@@ -1,188 +1,277 @@
-import { useState } from 'react';
-import { Camera, Scan, Zap, Droplets, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type DemoMode = 'A' | 'B' | 'C';
-
-interface ScanResult {
-  grade: string;
-  gradeColor: string;
+interface PerceptionResult {
+  biomassType: string;
+  grade: "A" | "B" | "C";
   moisture: string;
   calorificValue: string;
-  recommendation: string;
+  contamination: {
+    detected: boolean;
+    type: string | null;
+  };
   confidence: number;
 }
 
-const demoResults: Record<DemoMode, ScanResult> = {
-  A: {
-    grade: 'Premium Grade A',
-    gradeColor: 'text-green-600 bg-green-100',
-    moisture: '≤20%',
-    calorificValue: '4,500+ kcal/kg',
-    recommendation: 'Excellent for industrial boilers and power plants',
-    confidence: 98,
-  },
-  B: {
-    grade: 'Standard Grade B',
-    gradeColor: 'text-yellow-600 bg-yellow-100',
-    moisture: '20-30%',
-    calorificValue: '3,800-4,500 kcal/kg',
-    recommendation: 'Suitable for medium-scale heating applications',
-    confidence: 92,
-  },
-  C: {
-    grade: 'Low Grade C',
-    gradeColor: 'text-red-600 bg-red-100',
-    moisture: '>30%',
-    calorificValue: '<3,800 kcal/kg',
-    recommendation: 'Requires additional drying before use',
-    confidence: 87,
-  },
-};
+interface RobotCommand {
+  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
+  targetBin: number | null;
+  priority: "normal" | "high" | "emergency";
+  timestamp: string;
+  perceptionData: PerceptionResult;
+}
+
+interface ActionLogEntry {
+  id: string;
+  type: 'perception' | 'decision' | 'action' | 'sync' | 'error';
+  message: string;
+  timestamp: Date;
+  status: 'pending' | 'success' | 'error';
+}
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export default function AIScan() {
   const { t } = useLanguage();
-  const [demoEnabled, setDemoEnabled] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<DemoMode>('A');
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [perception, setPerception] = useState<PerceptionResult | null>(null);
+  const [robotCommand, setRobotCommand] = useState<RobotCommand | null>(null);
+  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
 
-  const handleScan = () => {
-    setIsScanning(true);
-    setScanResult(null);
+  const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending') => {
+    const entry: ActionLogEntry = {
+      id: Date.now().toString(),
+      type,
+      message,
+      timestamp: new Date(),
+      status,
+    };
+    setActionLog((prev) => [...prev, entry]);
+    return entry.id;
+  };
 
-    // Simulate scanning process
-    setTimeout(() => {
-      setIsScanning(false);
-      if (demoEnabled) {
-        setScanResult(demoResults[selectedMode]);
+  const updateLogEntry = (id: string, status: ActionLogEntry['status']) => {
+    setActionLog((prev) =>
+      prev.map((entry) => (entry.id === id ? { ...entry, status } : entry))
+    );
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target?.result as string);
+        setPerception(null);
+        setRobotCommand(null);
+        setActionLog([]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const processImage = async () => {
+    if (!selectedImage) return;
+
+    setIsProcessing(true);
+    setActionLog([]);
+
+    try {
+      // Step 1: Perception
+      const perceptionLogId = addLogEntry('perception', 'Analyzing biomass sample...');
+
+      // Extract base64 data from data URL
+      const base64Data = selectedImage.split(',')[1];
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/biomass-perception`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageBase64: base64Data }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
       }
-    }, 2000);
+
+      const data = await response.json();
+
+      // Update perception log
+      updateLogEntry(perceptionLogId, 'success');
+      addLogEntry('perception', `${data.perception.biomassType} detected`, 'success');
+
+      // Step 2: Decision
+      const decisionLogId = addLogEntry('decision', 'Evaluating quality grade...');
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
+
+      if (data.perception.contamination.detected) {
+        updateLogEntry(decisionLogId, 'error');
+        addLogEntry('decision', `⚠️ CONTAMINATION: ${data.perception.contamination.type} detected!`, 'error');
+      } else {
+        updateLogEntry(decisionLogId, 'success');
+        addLogEntry('decision', `Grade ${data.perception.grade} (${data.perception.confidence}% confidence)`, 'success');
+      }
+
+      // Step 3: Action
+      const actionLogId = addLogEntry('action', 'Generating robot command...');
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
+
+      const actionMessages: Record<string, string> = {
+        MOVE_TO_BIN_1: 'Moving Robotic Arm to Bin 1 (Premium)',
+        MOVE_TO_BIN_2: 'Moving Robotic Arm to Bin 2 (Standard)',
+        REJECT_TO_CONVEYOR: 'Rejecting to Conveyor Belt',
+        EMERGENCY_STOP: '🚨 EMERGENCY STOP - Manual inspection required',
+      };
+
+      const isEmergency = data.robotCommand.action === 'EMERGENCY_STOP';
+      updateLogEntry(actionLogId, isEmergency ? 'error' : 'success');
+      addLogEntry('action', actionMessages[data.robotCommand.action], isEmergency ? 'error' : 'success');
+
+      // Step 4: Sync status
+      if (data.vultrSyncStatus !== 'not_configured') {
+        const syncLogId = addLogEntry('sync', 'Syncing with Vultr Central Brain...');
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        updateLogEntry(syncLogId, data.vultrSyncStatus === 'synced' ? 'success' : 'error');
+        addLogEntry(
+          'sync',
+          data.vultrSyncStatus === 'synced' ? 'Command sent to hardware' : 'Sync failed - command stored locally',
+          data.vultrSyncStatus === 'synced' ? 'success' : 'error'
+        );
+      }
+
+      setPerception(data.perception);
+      setRobotCommand(data.robotCommand);
+
+    } catch (error) {
+      console.error('Processing error:', error);
+      addLogEntry('error', error instanceof Error ? error.message : 'Processing failed', 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const resetScan = () => {
-    setScanResult(null);
-    setIsScanning(false);
+    setSelectedImage(null);
+    setPerception(null);
+    setRobotCommand(null);
+    setActionLog([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const getGradeColor = (grade: string) => {
+    switch (grade) {
+      case 'A': return 'text-green-600 bg-green-100';
+      case 'B': return 'text-yellow-600 bg-yellow-100';
+      case 'C': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getLogIcon = (type: ActionLogEntry['type'], status: ActionLogEntry['status']) => {
+    if (status === 'pending') return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+    if (status === 'error') return <AlertTriangle className="w-4 h-4 text-red-500" />;
+    
+    switch (type) {
+      case 'perception': return <Scan className="w-4 h-4 text-green-500" />;
+      case 'decision': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case 'action': return <Bot className="w-4 h-4 text-green-500" />;
+      case 'sync': return <Zap className="w-4 h-4 text-green-500" />;
+      default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
+    }
   };
 
   return (
     <div className="pb-20 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-b from-green-600 to-green-800 pt-8 pb-6 px-6 rounded-b-3xl shadow-md text-white text-center">
+      <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 pt-8 pb-6 px-6 rounded-b-3xl shadow-md text-white text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Scan className="w-6 h-6" />
-          <h1 className="text-2xl font-bold">{t('scanTitle') || 'AI Biomass Scanner'}</h1>
+          <Bot className="w-6 h-6" />
+          <h1 className="text-2xl font-bold">{t('perceptionHub') || 'Robotic Perception Hub'}</h1>
         </div>
-        <p className="text-green-100 text-sm opacity-90">
-          {t('scanDesc') || 'Analyze biomass quality using AI-powered grading'}
+        <p className="text-emerald-100 text-sm opacity-90">
+          {t('perceptionDesc') || 'AI-powered biomass analysis & robotic control'}
         </p>
       </div>
 
       <div className="px-6 mt-6">
-        {/* Demo Toggle */}
-        <div className="bg-white rounded-2xl shadow-md p-4 mb-6 border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-600" />
-              <span className="font-semibold text-gray-800">{t('demoMode') || 'Demo Mode'}</span>
-            </div>
-            <button
-              onClick={() => setDemoEnabled(!demoEnabled)}
-              className={`p-1 rounded-full transition-colors ${demoEnabled ? 'text-green-600' : 'text-gray-400'}`}
-            >
-              {demoEnabled ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
-            </button>
-          </div>
-
-          {demoEnabled && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 mb-3">{t('selectDemoMode') || 'Select demo grading mode:'}</p>
-              <div className="grid grid-cols-3 gap-2">
-                {(['A', 'B', 'C'] as DemoMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => {
-                      setSelectedMode(mode);
-                      setScanResult(null);
-                    }}
-                    className={`py-3 px-4 rounded-xl font-semibold transition-all ${
-                      selectedMode === mode
-                        ? 'bg-green-500 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Mode {mode}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-3 p-3 bg-blue-50 rounded-xl">
-                <p className="text-xs text-blue-700">
-                  <strong>Mode A:</strong> Premium (20% moisture) | 
-                  <strong> Mode B:</strong> Standard | 
-                  <strong> Mode C:</strong> Low quality
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Camera Interface Placeholder */}
+        {/* Upload Area */}
         <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6 border border-gray-100">
           <div className="relative">
             <div className="aspect-[4/3] bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-              {isScanning ? (
-                <div className="text-center">
-                  <div className="w-32 h-32 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-green-400 font-semibold animate-pulse">
-                    {t('scanning') || 'Analyzing biomass...'}
-                  </p>
-                </div>
-              ) : scanResult ? (
-                <div className="text-center p-6">
-                  <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                  <p className="text-white font-semibold">{t('scanComplete') || 'Scan Complete!'}</p>
-                </div>
+              {selectedImage ? (
+                <img
+                  src={selectedImage}
+                  alt="Biomass sample"
+                  className="w-full h-full object-contain"
+                />
               ) : (
                 <div className="text-center p-6">
                   <Camera className="w-20 h-20 text-gray-500 mx-auto mb-4" />
                   <p className="text-gray-400 font-medium">
-                    {t('cameraPlaceholder') || 'Camera preview will appear here'}
+                    {t('uploadPrompt') || 'Upload a biomass sample image'}
                   </p>
                   <p className="text-gray-500 text-sm mt-2">
-                    {demoEnabled 
-                      ? t('demoReady') || 'Demo mode ready - tap Scan to simulate' 
-                      : t('enableDemo') || 'Enable demo mode to test'}
+                    {t('uploadHint') || 'Supports JPG, PNG, WEBP formats'}
                   </p>
                 </div>
               )}
 
-              {/* Scanning overlay */}
-              {isScanning && (
-                <div className="absolute inset-0 bg-green-500/10">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-green-400 animate-pulse"></div>
-                  <div 
-                    className="absolute left-0 right-0 h-0.5 bg-green-400 shadow-lg shadow-green-400"
-                    style={{ animation: 'scanLine 2s linear infinite' }}
-                  ></div>
+              {/* Processing overlay */}
+              {isProcessing && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-emerald-400 font-semibold animate-pulse">
+                      {t('analyzing') || 'Running perception pipeline...'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Camera controls */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-              {!scanResult ? (
+            {/* Upload/Action buttons */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3">
+              {!selectedImage ? (
                 <button
-                  onClick={handleScan}
-                  disabled={isScanning || !demoEnabled}
-                  className={`px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all ${
-                    demoEnabled && !isScanning
-                      ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
-                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all"
                 >
-                  <Scan className="w-5 h-5" />
-                  {isScanning ? t('scanningBtn') || 'Scanning...' : t('scanBtn') || 'Scan Biomass'}
+                  <Upload className="w-5 h-5" />
+                  {t('uploadBtn') || 'Upload Image'}
                 </button>
+              ) : !perception ? (
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-6 py-3 rounded-full font-bold flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white shadow-lg transition-all"
+                  >
+                    <Upload className="w-5 h-5" />
+                    {t('changeImage') || 'Change'}
+                  </button>
+                  <button
+                    onClick={processImage}
+                    disabled={isProcessing}
+                    className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all disabled:opacity-50"
+                  >
+                    <Scan className="w-5 h-5" />
+                    {t('analyzeBtn') || 'Analyze'}
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={resetScan}
@@ -196,25 +285,61 @@ export default function AIScan() {
           </div>
         </div>
 
-        {/* Scan Results */}
-        {scanResult && (
+        {/* Robot Action Log */}
+        {actionLog.length > 0 && (
+          <div className="bg-gray-900 rounded-2xl shadow-md p-4 mb-6 border border-gray-700">
+            <h3 className="font-bold text-white mb-3 flex items-center gap-2">
+              <Bot className="w-5 h-5 text-emerald-400" />
+              {t('actionLog') || 'Robot Action Log'}
+            </h3>
+            <div className="space-y-2">
+              {actionLog.map((entry, index) => (
+                <div key={entry.id} className="flex items-start gap-3">
+                  <div className="mt-1">{getLogIcon(entry.type, entry.status)}</div>
+                  <div className="flex-1">
+                    <p className={`text-sm ${entry.status === 'error' ? 'text-red-400' : 'text-gray-200'}`}>
+                      {entry.message}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {entry.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
+                  {index < actionLog.length - 1 && (
+                    <ArrowRight className="w-4 h-4 text-gray-600 mt-1" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Perception Results */}
+        {perception && (
           <div className="space-y-4 mb-6">
             {/* Grade Card */}
             <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800">{t('gradeResult') || 'Grading Result'}</h3>
-                <span className={`px-4 py-2 rounded-full font-bold ${scanResult.gradeColor}`}>
-                  {scanResult.grade}
+                <h3 className="font-bold text-gray-800">{t('perceptionResult') || 'Perception Result'}</h3>
+                <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception.grade)}`}>
+                  Grade {perception.grade}
                 </span>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
+                    <Scan className="w-5 h-5 text-emerald-600" />
+                    <span className="text-gray-700">{t('biomassType') || 'Biomass Type'}</span>
+                  </div>
+                  <span className="font-bold text-gray-800">{perception.biomassType}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-2">
                     <Droplets className="w-5 h-5 text-blue-600" />
                     <span className="text-gray-700">{t('moisture') || 'Moisture Content'}</span>
                   </div>
-                  <span className="font-bold text-gray-800">{scanResult.moisture}</span>
+                  <span className="font-bold text-gray-800">{perception.moisture}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
@@ -222,30 +347,64 @@ export default function AIScan() {
                     <Zap className="w-5 h-5 text-yellow-600" />
                     <span className="text-gray-700">{t('calorificValue') || 'Calorific Value'}</span>
                   </div>
-                  <span className="font-bold text-gray-800">{scanResult.calorificValue}</span>
+                  <span className="font-bold text-gray-800">{perception.calorificValue}</span>
                 </div>
 
-                <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-                  <p className="text-sm font-semibold text-green-800 mb-1">
-                    {t('recommendation') || 'Recommendation'}
-                  </p>
-                  <p className="text-green-700">{scanResult.recommendation}</p>
-                </div>
+                {perception.contamination.detected && (
+                  <div className="p-4 bg-red-50 rounded-xl border border-red-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className="w-5 h-5 text-red-600" />
+                      <span className="font-bold text-red-800">{t('contaminationAlert') || 'Contamination Alert'}</span>
+                    </div>
+                    <p className="text-red-700">
+                      {perception.contamination.type} detected - Manual inspection required
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{t('aiConfidence') || 'AI Confidence'}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-green-500 rounded-full transition-all"
-                        style={{ width: `${scanResult.confidence}%` }}
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all"
+                        style={{ width: `${perception.confidence}%` }}
                       ></div>
                     </div>
-                    <span className="font-bold text-green-600">{scanResult.confidence}%</span>
+                    <span className="font-bold text-emerald-600">{perception.confidence}%</span>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Robot Command Card */}
+            {robotCommand && (
+              <div className={`rounded-2xl shadow-md p-6 border ${
+                robotCommand.action === 'EMERGENCY_STOP' 
+                  ? 'bg-red-50 border-red-200' 
+                  : 'bg-emerald-50 border-emerald-200'
+              }`}>
+                <h3 className={`font-bold mb-3 flex items-center gap-2 ${
+                  robotCommand.action === 'EMERGENCY_STOP' ? 'text-red-800' : 'text-emerald-800'
+                }`}>
+                  <Bot className="w-5 h-5" />
+                  {t('robotCommand') || 'Robot Command'}
+                </h3>
+                <div className={`p-4 rounded-xl font-mono text-sm ${
+                  robotCommand.action === 'EMERGENCY_STOP' 
+                    ? 'bg-red-100 text-red-800' 
+                    : 'bg-emerald-100 text-emerald-800'
+                }`}>
+                  <pre className="whitespace-pre-wrap">
+{JSON.stringify({
+  action: robotCommand.action,
+  targetBin: robotCommand.targetBin,
+  priority: robotCommand.priority,
+}, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -254,21 +413,14 @@ export default function AIScan() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-bold text-blue-800 mb-1">{t('aboutAIScan') || 'About AI Scan'}</h4>
+              <h4 className="font-bold text-blue-800 mb-1">{t('aboutPerception') || 'About Robotic Perception'}</h4>
               <p className="text-sm text-blue-700">
-                {t('aiScanInfo') || 'This feature uses computer vision to analyze biomass samples and determine their quality grade, moisture content, and energy potential. Enable demo mode to simulate the scanning process.'}
+                {t('perceptionInfo') || 'This hub uses Gemini AI vision to analyze biomass samples, detect quality grades, identify contamination, and generate real-time commands for robotic sorting systems.'}
               </p>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes scanLine {
-          0% { top: 0; }
-          100% { top: 100%; }
-        }
-      `}</style>
     </div>
   );
 }
