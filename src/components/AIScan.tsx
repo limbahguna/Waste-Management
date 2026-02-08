@@ -38,7 +38,7 @@ export default function AIScan() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [perception, setPerception] = useState<PerceptionResult | null>(null);
-  const [robotCommand, setRobotCommand] = useState<RobotCommand | null>(null);
+  const [_robotCommand, setRobotCommand] = useState<RobotCommand | null>(null);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
 
   const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending') => {
@@ -233,11 +233,11 @@ export default function AIScan() {
       {/* Header */}
       <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 pt-8 pb-6 px-6 rounded-b-3xl shadow-md text-white text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Bot className="w-6 h-6" />
-          <h1 className="text-2xl font-bold">{t('perceptionHub') || 'Robotic Perception Hub'}</h1>
+          <Scan className="w-6 h-6" />
+          <h1 className="text-2xl font-bold">Pusat Analisis Biomassa</h1>
         </div>
         <p className="text-emerald-100 text-sm opacity-90">
-          {t('perceptionDesc') || 'AI-powered biomass analysis & robotic control'}
+          Analisis kualitas biomassa dengan teknologi AI
         </p>
       </div>
 
@@ -326,26 +326,28 @@ export default function AIScan() {
           </div>
         </div>
 
-        {/* Robot Action Log */}
-        {actionLog.length > 0 && (
+        {/* Analysis Progress Log - filtered to hide sync errors */}
+        {actionLog.filter(e => e.type !== 'sync' && e.type !== 'error').length > 0 && (
           <div className="bg-gray-900 rounded-2xl shadow-md p-4 mb-6 border border-gray-700">
             <h3 className="font-bold text-white mb-3 flex items-center gap-2">
-              <Bot className="w-5 h-5 text-emerald-400" />
-              {t('actionLog') || 'Robot Action Log'}
+              <Scan className="w-5 h-5 text-emerald-400" />
+              Log Analisis
             </h3>
             <div className="space-y-2">
-              {actionLog.map((entry, index) => (
+              {actionLog
+                .filter(entry => entry.type !== 'sync' && entry.type !== 'error')
+                .map((entry, index, filteredArr) => (
                 <div key={entry.id} className="flex items-start gap-3">
                   <div className="mt-1">{getLogIcon(entry.type, entry.status)}</div>
                   <div className="flex-1">
-                    <p className={`text-sm ${entry.status === 'error' ? 'text-red-400' : 'text-gray-200'}`}>
+                    <p className="text-sm text-gray-200">
                       {entry.message}
                     </p>
                     <p className="text-xs text-gray-500">
                       {entry.timestamp.toLocaleTimeString()}
                     </p>
                   </div>
-                  {index < actionLog.length - 1 && (
+                  {index < filteredArr.length - 1 && (
                     <ArrowRight className="w-4 h-4 text-gray-600 mt-1" />
                   )}
                 </div>
@@ -418,49 +420,8 @@ export default function AIScan() {
               </div>
             </div>
 
-            {/* Robot Command Card */}
-            {robotCommand && (
-              <div className={`rounded-2xl shadow-md p-6 border ${
-                robotCommand.action === 'EMERGENCY_STOP' 
-                  ? 'bg-red-50 border-red-200' 
-                  : 'bg-emerald-50 border-emerald-200'
-              }`}>
-                <h3 className={`font-bold mb-3 flex items-center gap-2 ${
-                  robotCommand.action === 'EMERGENCY_STOP' ? 'text-red-800' : 'text-emerald-800'
-                }`}>
-                  <Bot className="w-5 h-5" />
-                  {t('robotCommand') || 'Robot Command'}
-                </h3>
-                <div className={`p-4 rounded-xl font-mono text-sm ${
-                  robotCommand.action === 'EMERGENCY_STOP' 
-                    ? 'bg-red-100 text-red-800' 
-                    : 'bg-emerald-100 text-emerald-800'
-                }`}>
-                  <pre className="whitespace-pre-wrap">
-{JSON.stringify({
-  action: robotCommand.action,
-  targetBin: robotCommand.targetBin,
-  priority: robotCommand.priority,
-}, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )}
           </div>
         )}
-
-        {/* Info Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-bold text-blue-800 mb-1">{t('aboutPerception') || 'About Robotic Perception'}</h4>
-              <p className="text-sm text-blue-700">
-                {t('perceptionInfo') || 'This hub uses Gemini AI vision to analyze biomass samples, detect quality grades, identify contamination, and generate real-time commands for robotic sorting systems.'}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
