@@ -1,1 +1,4 @@
 project_id = "ntcgtsnufvhtgaejuuzv"
+
+[functions.biomass-perception]
+verify_jwt = false
