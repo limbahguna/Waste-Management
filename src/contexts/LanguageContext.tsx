@@ -52,7 +52,7 @@ const translations = {
     perceptionResult: 'Hasil Analisis',
     biomassType: 'Jenis Biomassa',
     contaminationAlert: 'Peringatan Kontaminasi',
-    analysisLog: 'Log Analisis',
+    aiScanBtn: 'Mulai AI Scan Biomassa',
 
     // Robot Command Center translations
     robotTitle: 'Robot Command Center',
@@ -411,7 +411,7 @@ const translations = {
     perceptionResult: 'Analysis Result',
     biomassType: 'Biomass Type',
     contaminationAlert: 'Contamination Alert',
-    analysisLog: 'Analysis Log',
+    aiScanBtn: 'Start AI Biomass Scan',
 
     // Robot Command Center translations
     robotTitle: 'Robot Command Center',

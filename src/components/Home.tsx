@@ -313,7 +313,7 @@ export default function Home({ onNavigateToScan }: HomeProps) {
             <div className="bg-white/20 p-3 rounded-full">
               <Camera className="w-7 h-7 text-white" />
             </div>
-            <span className="text-xl">Mulai AI Scan Biomassa</span>
+            <span className="text-xl">{t('aiScanBtn')}</span>
           </button>
         )}
 
