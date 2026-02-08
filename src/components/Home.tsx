@@ -220,18 +220,6 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           <p className="text-base text-green-50 opacity-90">{t('heroSubtitle')}</p>
         </div>
 
-        {/* AI Scan Biomass Button */}
-        {profile?.role === 'producer' && onNavigateToScan && (
-          <button
-            onClick={onNavigateToScan}
-            className="mt-6 w-full bg-white text-green-700 font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-50 transition-all flex items-center justify-center gap-3"
-          >
-            <div className="bg-green-600 p-2 rounded-full">
-              <Camera className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-lg">{t('aiScanBiomass') || 'AI Scan Biomass'}</span>
-          </button>
-        )}
       </div>
 
       <div className="px-6 mt-6">
@@ -315,6 +303,19 @@ export default function Home({ onNavigateToScan }: HomeProps) {
             </button>
           </div>
         </div>
+
+        {/* AI Scan Biomass Button - Below Product Categories */}
+        {onNavigateToScan && (
+          <button
+            onClick={onNavigateToScan}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-4 mt-6"
+          >
+            <div className="bg-white/20 p-3 rounded-full">
+              <Camera className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-xl">Mulai AI Scan Biomassa</span>
+          </button>
+        )}
 
         {/* Riwayat Penyetoran - Only for Public Users */}
         {profile?.role === 'public' && (
