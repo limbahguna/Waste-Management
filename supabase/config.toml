@@ -3,5 +3,5 @@ project_id = "ntcgtsnufvhtgaejuuzv"
 [functions.biomass-perception]
 verify_jwt = false
 
-[functions.groq-sorting-agent]
+[functions.sorting-agent]
 verify_jwt = false
