@@ -48,7 +48,7 @@ function AppContent() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home />;
+        return <Home onNavigateToScan={() => setCurrentPage('scan')} />;
       case 'marketplace':
         return productsLoading ? (
           <div className="flex items-center justify-center min-h-screen">

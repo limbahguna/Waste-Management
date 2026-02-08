@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
-import { Package, Clock, User, Scale, MapPin, TrendingUp, TreePine, CheckCircle, ImageIcon, Inbox, Phone } from 'lucide-react';
+import { Package, Clock, User, Scale, MapPin, TrendingUp, TreePine, CheckCircle, ImageIcon, Inbox, Phone, Camera } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
+
+interface HomeProps {
+  onNavigateToScan?: () => void;
+}
 
 interface Transaction {
   id: string;
@@ -35,7 +39,7 @@ interface UserHistory {
   created_at: string;
 }
 
-export default function Home() {
+export default function Home({ onNavigateToScan }: HomeProps) {
   const { user, profile } = useAuth();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
@@ -215,6 +219,19 @@ export default function Home() {
           <h1 className="text-3xl font-bold mb-3">{t('heroTitle')}</h1>
           <p className="text-base text-green-50 opacity-90">{t('heroSubtitle')}</p>
         </div>
+
+        {/* AI Scan Biomass Button */}
+        {profile?.role === 'producer' && onNavigateToScan && (
+          <button
+            onClick={onNavigateToScan}
+            className="mt-6 w-full bg-white text-green-700 font-bold py-4 px-6 rounded-2xl shadow-lg hover:bg-green-50 transition-all flex items-center justify-center gap-3"
+          >
+            <div className="bg-green-600 p-2 rounded-full">
+              <Camera className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-lg">{t('aiScanBiomass') || 'AI Scan Biomass'}</span>
+          </button>
+        )}
       </div>
 
       <div className="px-6 mt-6">
