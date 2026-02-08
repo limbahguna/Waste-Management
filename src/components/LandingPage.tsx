@@ -1,4 +1,4 @@
-import { Leaf, TrendingUp, Wind, Shield } from 'lucide-react';
+import { Leaf, TrendingUp, Wind, Shield, Camera, Cloud, Gift } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Logo } from './Logo';
 
@@ -33,6 +33,55 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </p>
         </div>
 
+        {/* How It Works Section */}
+        <div className="w-full max-w-4xl mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">{t('landing.howItWorksTitle')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Step 1: Scan & Detect */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/15 transition-all relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                1
+              </div>
+              <div className="bg-green-600/40 p-4 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Camera className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">{t('landing.step1Title')}</h3>
+              <p className="text-white/80 text-sm">
+                {t('landing.step1Desc')}
+              </p>
+            </div>
+
+            {/* Step 2: Cloud Processing */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/15 transition-all relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                2
+              </div>
+              <div className="bg-green-600/40 p-4 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Cloud className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">{t('landing.step2Title')}</h3>
+              <p className="text-white/80 text-sm">
+                {t('landing.step2Desc')}
+              </p>
+            </div>
+
+            {/* Step 3: Sort & Reward */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center hover:bg-white/15 transition-all relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                3
+              </div>
+              <div className="bg-green-600/40 p-4 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Gift className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">{t('landing.step3Title')}</h3>
+              <p className="text-white/80 text-sm">
+                {t('landing.step3Desc')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
         <div className="w-full max-w-5xl mb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-start gap-5 hover:bg-white/15 transition-all">

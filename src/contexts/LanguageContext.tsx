@@ -332,7 +332,14 @@ const translations = {
       stats2Label: 'Kg CO2 Terselamatkan',
       btnCta: 'Masuk / Daftar Sekarang',
       footerText: '© 2025 LimbahGuna. Platform Ekonomi Sirkular Indonesia.',
-      footerBy: 'By PT Energi Jaya Integra.'
+      footerBy: 'By PT Energi Jaya Integra.',
+      howItWorksTitle: 'Cara Kerja',
+      step1Title: 'Scan & Deteksi',
+      step1Desc: 'Ambil foto biomassa Anda menggunakan AI Scanner untuk identifikasi jenis dan kualitas.',
+      step2Title: 'Cloud Processing',
+      step2Desc: 'Data diproses di Vultr Cloud dengan AI untuk analisis mendalam dan grading otomatis.',
+      step3Title: 'Sortir & Reward',
+      step3Desc: 'Sistem robot melakukan penyortiran otomatis dan Anda mendapat poin reward.'
     },
 
     auth: {
@@ -691,7 +698,14 @@ const translations = {
       stats2Label: 'Kg CO2 Saved',
       btnCta: 'Login / Register Now',
       footerText: '© 2025 LimbahGuna. Indonesia\'s Circular Economy Platform.',
-      footerBy: 'By PT Energi Jaya Integra.'
+      footerBy: 'By PT Energi Jaya Integra.',
+      howItWorksTitle: 'How It Works',
+      step1Title: 'Scan & Detect',
+      step1Desc: 'Capture your biomass using AI Scanner to identify type and quality.',
+      step2Title: 'Cloud Processing',
+      step2Desc: 'Data is processed on Vultr Cloud with AI for deep analysis and auto-grading.',
+      step3Title: 'Sort & Reward',
+      step3Desc: 'Robot system performs automatic sorting and you earn reward points.'
     },
 
     auth: {
