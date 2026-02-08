@@ -335,11 +335,11 @@ const translations = {
       footerBy: 'By PT Energi Jaya Integra.',
       howItWorksTitle: 'Cara Kerja',
       step1Title: 'Scan & Deteksi',
-      step1Desc: 'Ambil foto biomassa Anda menggunakan AI Scanner untuk identifikasi jenis dan kualitas.',
+      step1Desc: 'Arahkan kamera ke limbah biomassa. AI kami akan mengidentifikasi jenis dan kualitas bahan secara instan.',
       step2Title: 'Cloud Processing',
-      step2Desc: 'Data diproses di Vultr Cloud dengan AI untuk analisis mendalam dan grading otomatis.',
+      step2Desc: 'Data dikirim ke Vultr Central Brain untuk divalidasi dan diolah menjadi instruksi kontrol robot sorting.',
       step3Title: 'Sortir & Reward',
-      step3Desc: 'Sistem robot melakukan penyortiran otomatis dan Anda mendapat poin reward.'
+      step3Desc: 'Robot memilah limbah ke wadah yang tepat, dan Anda mendapatkan poin reward atas kontribusi pada ekonomi sirkular.'
     },
 
     auth: {
@@ -701,11 +701,11 @@ const translations = {
       footerBy: 'By PT Energi Jaya Integra.',
       howItWorksTitle: 'How It Works',
       step1Title: 'Scan & Detect',
-      step1Desc: 'Capture your biomass using AI Scanner to identify type and quality.',
+      step1Desc: 'Point your camera at biomass waste. Our AI will instantly identify the type and quality of the material.',
       step2Title: 'Cloud Processing',
-      step2Desc: 'Data is processed on Vultr Cloud with AI for deep analysis and auto-grading.',
+      step2Desc: 'Data is sent to Vultr Central Brain for validation and processed into robot sorting control instructions.',
       step3Title: 'Sort & Reward',
-      step3Desc: 'Robot system performs automatic sorting and you earn reward points.'
+      step3Desc: 'The robot sorts waste into the correct bins, and you earn reward points for contributing to the circular economy.'
     },
 
     auth: {
