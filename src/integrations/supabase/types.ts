@@ -214,6 +214,7 @@ export type Database = {
         Args: { points_to_add: number; user_id: string }
         Returns: undefined
       }
+      is_producer: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
