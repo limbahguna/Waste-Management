@@ -46,10 +46,10 @@ export default function HowItWorks() {
   return (
     <div 
       ref={sectionRef}
-      className="w-full bg-emerald-50 py-12 px-6"
+      className="w-full bg-gradient-to-b from-[#006837] to-[#004d28] py-12 px-6"
     >
       <div className="max-w-5xl mx-auto">
-        <h2 className={`text-2xl md:text-3xl font-bold text-center text-emerald-800 mb-10 transition-all duration-700 ${
+        <h2 className={`text-2xl md:text-3xl font-bold text-center text-white mb-10 transition-all duration-700 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           {t('landing.howItWorksTitle')}
@@ -61,7 +61,7 @@ export default function HowItWorks() {
             return (
               <div 
                 key={index}
-                className={`bg-white rounded-2xl p-6 text-center shadow-md border border-emerald-100 relative transition-all duration-700 ${
+                className={`bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 relative transition-all duration-700 hover:bg-white/15 ${
                   isVisible 
                     ? 'opacity-100 translate-y-0' 
                     : 'opacity-0 translate-y-8'
@@ -69,22 +69,22 @@ export default function HowItWorks() {
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
                 {/* Step number badge */}
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-amber-400 text-emerald-900 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
                   {index + 1}
                 </div>
                 
                 {/* Icon container */}
-                <div className="bg-emerald-100 p-4 rounded-xl w-16 h-16 mx-auto mb-4 mt-2 flex items-center justify-center">
-                  <Icon className="w-8 h-8 text-emerald-600" />
+                <div className="bg-amber-400/20 p-4 rounded-xl w-16 h-16 mx-auto mb-4 mt-2 flex items-center justify-center">
+                  <Icon className="w-8 h-8 text-amber-400" />
                 </div>
                 
                 {/* Title */}
-                <h3 className="font-bold text-lg text-emerald-800 mb-2">
+                <h3 className="font-bold text-lg text-white mb-2">
                   {t(step.titleKey)}
                 </h3>
                 
                 {/* Description */}
-                <p className="text-emerald-700/80 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                   {t(step.descKey)}
                 </p>
               </div>
@@ -94,12 +94,12 @@ export default function HowItWorks() {
 
         {/* Connection lines for desktop */}
         <div className="hidden md:flex justify-center items-center mt-6 gap-4">
-          <div className="flex items-center gap-2 text-emerald-400">
-            <div className="w-24 h-0.5 bg-emerald-300"></div>
+          <div className="flex items-center gap-2 text-amber-400/60">
+            <div className="w-24 h-0.5 bg-amber-400/40"></div>
             <span className="text-lg">→</span>
-            <div className="w-24 h-0.5 bg-emerald-300"></div>
+            <div className="w-24 h-0.5 bg-amber-400/40"></div>
             <span className="text-lg">→</span>
-            <div className="w-24 h-0.5 bg-emerald-300"></div>
+            <div className="w-24 h-0.5 bg-amber-400/40"></div>
           </div>
         </div>
       </div>

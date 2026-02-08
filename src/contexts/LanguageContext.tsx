@@ -334,12 +334,12 @@ const translations = {
       footerText: '© 2025 LimbahGuna. Platform Ekonomi Sirkular Indonesia.',
       footerBy: 'By PT Energi Jaya Integra.',
       howItWorksTitle: 'Cara Kerja',
-      step1Title: 'Scan & Deteksi',
-      step1Desc: 'Arahkan kamera ke limbah biomassa. AI kami akan mengidentifikasi jenis dan kualitas bahan secara instan.',
-      step2Title: 'Cloud Processing',
-      step2Desc: 'Data dikirim ke Vultr Central Brain untuk divalidasi dan diolah menjadi instruksi kontrol robot sorting.',
-      step3Title: 'Sortir & Reward',
-      step3Desc: 'Robot memilah limbah ke wadah yang tepat, dan Anda mendapatkan poin reward atas kontribusi pada ekonomi sirkular.'
+      step1Title: 'Foto Sampah Anda',
+      step1Desc: 'Arahkan kamera ke sampah atau limbah di sekitar Anda. Sistem AI kami akan mengenali jenis dan kualitasnya secara otomatis.',
+      step2Title: 'Proses Cepat',
+      step2Desc: 'Foto Anda diproses sekejap oleh pusat kendali kami untuk memberikan instruksi langsung ke sistem pemilah.',
+      step3Title: 'Dapatkan Hadiah',
+      step3Desc: 'Limbah dipilah ke tempat yang benar, dan Anda otomatis mendapatkan poin reward yang bisa ditukar dengan berbagai hadiah menarik.'
     },
 
     auth: {
@@ -700,12 +700,12 @@ const translations = {
       footerText: '© 2025 LimbahGuna. Indonesia\'s Circular Economy Platform.',
       footerBy: 'By PT Energi Jaya Integra.',
       howItWorksTitle: 'How It Works',
-      step1Title: 'Scan & Detect',
-      step1Desc: 'Point your camera at biomass waste. Our AI will instantly identify the type and quality of the material.',
-      step2Title: 'Cloud Processing',
-      step2Desc: 'Data is sent to Vultr Central Brain for validation and processed into robot sorting control instructions.',
-      step3Title: 'Sort & Reward',
-      step3Desc: 'The robot sorts waste into the correct bins, and you earn reward points for contributing to the circular economy.'
+      step1Title: 'Photo Your Waste',
+      step1Desc: 'Point your camera at waste or trash around you. Our AI system will automatically recognize its type and quality.',
+      step2Title: 'Fast Processing',
+      step2Desc: 'Your photo is instantly processed by our control center to provide direct instructions to the sorting system.',
+      step3Title: 'Get Rewards',
+      step3Desc: 'Waste is sorted into the correct bins, and you automatically earn reward points that can be exchanged for exciting prizes.'
     },
 
     auth: {
