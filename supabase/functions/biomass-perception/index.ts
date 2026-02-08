@@ -260,19 +260,47 @@ Return ONLY valid JSON, no markdown or explanation.`;
 
     // Step 4: Attempt to sync with Vultr backend (optional, won't fail if unavailable)
     let vultrSyncStatus = "not_configured";
+    let vultrSyncError = null;
     const VULTR_ENDPOINT = Deno.env.get("VULTR_ROBOT_API");
     
     if (VULTR_ENDPOINT) {
       try {
-        const vultrResponse = await fetch(`${VULTR_ENDPOINT}/api/robot-control`, {
+        // VULTR_ROBOT_API should be the full URL (e.g., http://45.63.75.96:3000/api/robot-control)
+        // Don't append additional path segments
+        console.log(`[VULTR] Attempting sync to: ${VULTR_ENDPOINT}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const vultrResponse = await fetch(VULTR_ENDPOINT, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
           body: JSON.stringify(robotCommand),
+          signal: controller.signal,
         });
-        vultrSyncStatus = vultrResponse.ok ? "synced" : "sync_failed";
+        
+        clearTimeout(timeoutId);
+        
+        if (vultrResponse.ok) {
+          vultrSyncStatus = "synced";
+          console.log("[VULTR] Sync successful");
+        } else {
+          vultrSyncStatus = "sync_failed";
+          vultrSyncError = `HTTP ${vultrResponse.status}: ${vultrResponse.statusText}`;
+          console.error(`[VULTR] Sync failed: ${vultrSyncError}`);
+        }
       } catch (vultrError) {
-        console.error("Vultr sync failed:", vultrError);
-        vultrSyncStatus = "sync_error";
+        if (vultrError.name === 'AbortError') {
+          vultrSyncStatus = "timeout";
+          vultrSyncError = "Connection timed out after 10 seconds";
+        } else {
+          vultrSyncStatus = "sync_error";
+          vultrSyncError = vultrError instanceof Error ? vultrError.message : "Unknown error";
+        }
+        console.error(`[VULTR] Sync error: ${vultrSyncError}`);
       }
     }
 
@@ -285,6 +313,7 @@ Return ONLY valid JSON, no markdown or explanation.`;
         perception,
         robotCommand,
         vultrSyncStatus,
+        vultrSyncError,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
