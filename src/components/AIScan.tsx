@@ -46,6 +46,7 @@ export default function AIScan() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isGroqThinking, setIsGroqThinking] = useState(false);
   const [perception, setPerception] = useState<PerceptionResult | null>(null);
   const [_robotCommand, setRobotCommand] = useState<RobotCommand | null>(null);
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(null);
@@ -170,10 +171,11 @@ export default function AIScan() {
       }
 
       // Step 3: Call Groq Sorting Agent
-      const groqLogId = addLogEntry('groq', '🧠 Consulting Groq AI for optimal sorting route...');
+      setIsGroqThinking(true);
+      const groqLogId = addLogEntry('groq', '🧠 Groq is thinking...');
       
       try {
-        const groqResponse = await fetch(`${SUPABASE_URL}/functions/v1/groq-sorting-agent`, {
+        const groqResponse = await fetch(`${SUPABASE_URL}/functions/v1/sorting-agent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -200,6 +202,14 @@ export default function AIScan() {
             updateLogEntry(groqLogId, 'success');
             addLogEntry('groq', `✅ Groq: ${groqData.decision.robotCommand} → ${groqData.decision.targetBin}`, 'success');
             addLogEntry('groq', `📋 ${groqData.decision.reasoning}`, 'success');
+            
+            // Show Vultr sync status from Groq response
+            if (groqData.vultrSyncStatus === 'synced') {
+              addLogEntry('sync', '✅ Command sent to Vultr Central Brain', 'success');
+            } else if (groqData.vultrSyncStatus === 'failed') {
+              addLogEntry('sync', '⚠️ Failed to sync with Vultr - command stored locally', 'error');
+            }
+            
             setGroqDecision(groqData.decision);
           } else {
             throw new Error(groqData.error || 'Groq decision failed');
@@ -224,6 +234,8 @@ export default function AIScan() {
                          data.perception.grade === 'B' ? 'Standard' : 'Low'
         };
         setGroqDecision(fallbackDecision);
+      } finally {
+        setIsGroqThinking(false);
       }
 
       // Step 4: Action - Show Final Robot Command
@@ -348,10 +360,24 @@ export default function AIScan() {
               {isProcessing && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-emerald-400 font-semibold animate-pulse">
-                      {t('analyzing')}
-                    </p>
+                    {isGroqThinking ? (
+                      <>
+                        <Brain className="w-16 h-16 text-purple-400 mx-auto mb-4 animate-pulse" />
+                        <p className="text-purple-400 font-semibold animate-pulse text-lg">
+                          🧠 Groq is thinking...
+                        </p>
+                        <p className="text-purple-300 text-sm mt-2">
+                          Determining optimal sorting route
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-emerald-400 font-semibold animate-pulse">
+                          {t('analyzing')}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
