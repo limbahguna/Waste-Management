@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 import { Package, Clock, User, Scale, MapPin, TrendingUp, TreePine, CheckCircle, ImageIcon, Inbox, Phone, Camera } from 'lucide-react';
+import { toast } from 'sonner';
 import LanguageSwitcher from './LanguageSwitcher';
 import HowItWorks from './HowItWorks';
 
@@ -47,6 +48,7 @@ export default function Home({ onNavigateToScan }: HomeProps) {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<Transaction[]>([]);
   const [userHistory, setUserHistory] = useState<UserHistory[]>([]);
+  const [carbonAnimating, setCarbonAnimating] = useState(false);
   const [userStats, setUserStats] = useState<UserStats>({
     totalWaste: 0,
     carbonSaved: 0,
@@ -54,37 +56,56 @@ export default function Home({ onNavigateToScan }: HomeProps) {
 
   useEffect(() => {
     console.log('=== Home Component Mounted ===');
-    console.log('Profile:', profile);
-    console.log('User:', user);
-
     fetchData();
 
-    // Setup real-time subscription for producer
-    if (profile?.role === 'producer') {
-      console.log('Setting up real-time subscription for producer...');
-
-      const channel = supabase
-        .channel('pending-transactions')
+    // Listen for carbon sync events from Kiro agent (via Supabase realtime on transactions)
+    if (user?.id) {
+      const carbonChannel = supabase
+        .channel('carbon-sync')
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'transactions',
-            filter: 'status=eq.pending'
+            filter: `user_id=eq.${user.id}`
           },
           (payload) => {
-            console.log('Real-time update received:', payload);
-            fetchData();
+            const newRow = payload.new as any;
+            if (newRow?.carbon_saved && newRow.carbon_saved > 0) {
+              setCarbonAnimating(true);
+              toast.success(`🌱 +${newRow.carbon_saved} kg CO₂ saved!`, { duration: 4000 });
+              fetchData(); // refresh stats
+              setTimeout(() => setCarbonAnimating(false), 2000);
+            }
           }
         )
-        .subscribe((status) => {
-          console.log('Subscription status:', status);
-        });
+        .subscribe();
+
+      // Setup real-time subscription for producer
+      if (profile?.role === 'producer') {
+        const pendingChannel = supabase
+          .channel('pending-transactions')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'transactions',
+              filter: 'status=eq.pending'
+            },
+            () => fetchData()
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(carbonChannel);
+          supabase.removeChannel(pendingChannel);
+        };
+      }
 
       return () => {
-        console.log('Cleaning up subscription...');
-        supabase.removeChannel(channel);
+        supabase.removeChannel(carbonChannel);
       };
     }
   }, [profile, user]);
@@ -236,13 +257,13 @@ export default function Home({ onNavigateToScan }: HomeProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+          <div className={`bg-white rounded-2xl p-5 shadow-md border transition-all duration-500 ${carbonAnimating ? 'border-green-400 shadow-green-200 shadow-lg scale-105' : 'border-gray-100'}`}>
             <div className="flex flex-col">
-              <div className="bg-green-100 p-3 rounded-full w-fit mb-3">
-                <TreePine className="w-6 h-6 text-green-600" />
+              <div className={`bg-green-100 p-3 rounded-full w-fit mb-3 transition-all duration-500 ${carbonAnimating ? 'animate-pulse bg-green-300' : ''}`}>
+                <TreePine className={`w-6 h-6 text-green-600 ${carbonAnimating ? 'animate-bounce' : ''}`} />
               </div>
               <p className="text-xs text-gray-600 mb-1">{t('carbonSaved')}</p>
-              <p className="text-2xl font-bold text-gray-800 mb-1">{userStats.carbonSaved.toFixed(1)}</p>
+              <p className={`text-2xl font-bold text-gray-800 mb-1 transition-all duration-300 ${carbonAnimating ? 'text-green-600 scale-110' : ''}`}>{userStats.carbonSaved.toFixed(1)}</p>
               <p className="text-xs text-gray-500">kg CO₂</p>
             </div>
           </div>

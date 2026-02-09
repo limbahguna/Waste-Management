@@ -38,7 +38,7 @@ export default function RobotCommandCenter() {
   const [agents, setAgents] = useState<RobotAgent[]>(mockAgents);
   const [logs, setLogs] = useState<TaskLog[]>(mockLogs);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [vmStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connected');
+  const [_vmStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connected');
 
   useEffect(() => {
     if (isSimulating) {
@@ -132,24 +132,24 @@ export default function RobotCommandCenter() {
         <div className="bg-gray-800 rounded-2xl p-4 mb-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${vmStatus === 'connected' ? 'bg-green-500/20' : 'bg-yellow-500/20'}`}>
-                <Server className={`w-5 h-5 ${vmStatus === 'connected' ? 'text-green-400' : 'text-yellow-400'}`} />
+              <div className="p-2 rounded-full bg-green-500/20">
+                <Server className="w-5 h-5 text-green-400" />
               </div>
               <div>
                 <p className="text-white font-semibold">{t('vultrVM') || 'Vultr VM - Central Brain'}</p>
-                <p className="text-xs text-gray-400">
-                  {vmStatus === 'connected' 
-                    ? t('vmConnected') || 'Connected • Low latency' 
-                    : t('vmConnecting') || 'Connecting...'}
-                </p>
+                <p className="text-xs text-gray-400">~/limbahguna-agent • agent.py active</p>
               </div>
             </div>
-            <div className={`w-3 h-3 rounded-full ${vmStatus === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-yellow-400 animate-pulse'}`}></div>
+            <span className="flex items-center gap-1.5 bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1.5 rounded-full border border-green-500/30">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+              Connected to Vultr
+            </span>
           </div>
-          <div className="mt-3 p-2 bg-gray-900/50 rounded-lg">
+          <div className="mt-3 p-2 bg-gray-900/50 rounded-lg flex items-center justify-between">
             <p className="text-xs text-gray-500 font-mono">
-              API Endpoint: api.limbahguna.vultr.io:8443
+              http://45.63.75.96:3000/api/robot-control
             </p>
+            <span className="text-xs text-green-500 font-mono">200 OK</span>
           </div>
         </div>
 
