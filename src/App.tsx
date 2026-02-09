@@ -14,6 +14,7 @@ import BottomNav from './components/BottomNav';
 import ManageProducts from './pages/ManageProducts';
 import AIScan from './components/AIScan';
 import RobotCommandCenter from './components/RobotCommandCenter';
+import { Toaster } from 'sonner';
 
 type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
 
@@ -95,6 +96,7 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <AppContent />
+        <Toaster position="top-center" richColors closeButton />
       </AuthProvider>
     </LanguageProvider>
   );

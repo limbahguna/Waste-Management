@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-
+import { toast } from 'sonner';
 interface PerceptionResult {
   biomassType: string;
   grade: "A" | "B" | "C";
@@ -31,6 +31,11 @@ interface GroqSortingDecision {
   estimatedValue: string;
 }
 
+interface CarbonSyncResult {
+  carbonSaved: number;
+  synced: boolean;
+}
+
 interface ActionLogEntry {
   id: string;
   type: 'perception' | 'decision' | 'action' | 'sync' | 'error' | 'groq';
@@ -50,6 +55,7 @@ export default function AIScan() {
   const [perception, setPerception] = useState<PerceptionResult | null>(null);
   const [_robotCommand, setRobotCommand] = useState<RobotCommand | null>(null);
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(null);
+  const [carbonSyncResult, setCarbonSyncResult] = useState<CarbonSyncResult | null>(null);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
 
   const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending') => {
@@ -79,6 +85,7 @@ export default function AIScan() {
         setPerception(null);
         setRobotCommand(null);
         setGroqDecision(null);
+        setCarbonSyncResult(null);
         setActionLog([]);
       };
       reader.readAsDataURL(file);
@@ -203,6 +210,22 @@ export default function AIScan() {
             addLogEntry('groq', `✅ Groq: ${groqData.decision.robotCommand} → ${groqData.decision.targetBin}`, 'success');
             addLogEntry('groq', `📋 ${groqData.decision.reasoning}`, 'success');
             
+            // Handle carbon saved calculation from backend
+            if (groqData.carbonSaved && groqData.carbonSaved > 0) {
+              const carbonResult: CarbonSyncResult = {
+                carbonSaved: groqData.carbonSaved,
+                synced: groqData.vultrSyncStatus === 'synced'
+              };
+              setCarbonSyncResult(carbonResult);
+              addLogEntry('sync', `🌱 ${t('carbonSavedLabel')}: ${groqData.carbonSaved} kg CO₂`, 'success');
+              
+              // Show success toast
+              toast.success(t('carbonSyncSuccess').replace('{amount}', groqData.carbonSaved.toString()), {
+                icon: '🌱',
+                duration: 5000,
+              });
+            }
+            
             // Show Vultr sync status from Groq response
             if (groqData.vultrSyncStatus === 'synced') {
               addLogEntry('sync', '✅ Command sent to Vultr Central Brain', 'success');
@@ -281,6 +304,7 @@ export default function AIScan() {
     setPerception(null);
     setRobotCommand(null);
     setGroqDecision(null);
+    setCarbonSyncResult(null);
     setActionLog([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -571,6 +595,23 @@ export default function AIScan() {
                     <div className="p-3 bg-indigo-100/50 rounded-xl">
                       <p className="text-sm text-indigo-800 font-medium mb-1">Processing Notes:</p>
                       <p className="text-sm text-indigo-700">{groqDecision.processingNotes}</p>
+                    </div>
+                  )}
+
+                  {/* Carbon Saved Display */}
+                  {carbonSyncResult && (
+                    <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-green-500 p-2 rounded-full">
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-green-800 font-bold">{t('carbonSyncSuccessTitle')}</p>
+                          <p className="text-lg font-bold text-green-700">
+                            🌱 {carbonSyncResult.carbonSaved} kg CO₂ {t('carbonSavedLabel')}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

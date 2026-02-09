@@ -26,6 +26,23 @@ interface SortingDecision {
   estimatedValue: string;
 }
 
+// Carbon saving factors per kg based on biomass type and grade
+const CARBON_FACTORS: Record<string, Record<string, number>> = {
+  'Wood Pellet': { 'A': 1.8, 'B': 1.5, 'C': 1.0 },
+  'Cangkang Sawit': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
+  'Palm Kernel Shell': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
+  'Wood Chip': { 'A': 1.5, 'B': 1.3, 'C': 0.9 },
+  'Serbuk Kayu': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
+  'Sawdust': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
+  'default': { 'A': 1.5, 'B': 1.2, 'C': 0.8 }
+};
+
+function calculateCarbonSaved(biomassType: string, grade: string, estimatedWeight: number = 1): number {
+  const typeFactors = CARBON_FACTORS[biomassType] || CARBON_FACTORS['default'];
+  const factor = typeFactors[grade] || typeFactors['B'];
+  return parseFloat((estimatedWeight * factor).toFixed(2));
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -158,9 +175,15 @@ Respond with a JSON object:
       }
     }
 
+    // Calculate carbon savings based on grade and type
+    const carbonSaved = calculateCarbonSaved(biomassData.biomassType, biomassData.grade);
+
+    console.log(`🌱 Carbon savings calculated: ${carbonSaved} kg CO₂ for ${biomassData.biomassType} Grade ${biomassData.grade}`);
+
     return new Response(JSON.stringify({
       success: true,
       decision,
+      carbonSaved,
       vultrSyncStatus,
       model: 'llama-3.3-70b-versatile',
       timestamp: new Date().toISOString()

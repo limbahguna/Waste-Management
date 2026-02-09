@@ -53,6 +53,9 @@ const translations = {
     biomassType: 'Jenis Biomassa',
     contaminationAlert: 'Peringatan Kontaminasi',
     aiScanBtn: 'Mulai AI Scan Biomassa',
+    carbonSavedLabel: 'Diselamatkan',
+    carbonSyncSuccess: 'Sukses! Anda baru saja menyelamatkan {amount} kg emisi CO₂',
+    carbonSyncSuccessTitle: 'Smart Carbon Sync',
 
     // Robot Command Center translations
     robotTitle: 'Robot Command Center',
@@ -419,6 +422,9 @@ const translations = {
     biomassType: 'Biomass Type',
     contaminationAlert: 'Contamination Alert',
     aiScanBtn: 'Start AI Biomass Scan',
+    carbonSavedLabel: 'Saved',
+    carbonSyncSuccess: 'Success! You just saved {amount} kg of CO₂ emissions',
+    carbonSyncSuccessTitle: 'Smart Carbon Sync',
 
     // Robot Command Center translations
     robotTitle: 'Robot Command Center',
