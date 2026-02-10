@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { toast } from 'sonner';
 interface PerceptionResult {
   biomassType: string;
+  wasteGrade: string;
   grade: "A" | "B" | "C";
   moisture: string;
   calorificValue: string;
@@ -15,7 +16,7 @@ interface PerceptionResult {
 }
 
 interface RobotCommand {
-  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "MOVE_TO_BIN_7" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
+  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "MOVE_TO_BIN_3" | "MOVE_TO_BIN_4" | "MOVE_TO_BIN_5" | "MOVE_TO_BIN_6" | "MOVE_TO_BIN_7" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
   targetBin: number | null;
   priority: "normal" | "high" | "emergency";
   timestamp: string;
@@ -192,6 +193,7 @@ export default function AIScan() {
             biomassData: {
               grade: data.perception.grade,
               biomassType: data.perception.biomassType,
+              wasteGrade: data.perception.wasteGrade || 'UNKNOWN',
               moisture: parseFloat(data.perception.moisture),
               calorificValue: parseFloat(data.perception.calorificValue),
               confidence: data.perception.confidence,
@@ -266,11 +268,15 @@ export default function AIScan() {
       await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
 
       const actionMessages: Record<string, string> = {
-        MOVE_TO_BIN_1: '✅ Action: MOVE_TO_BIN_1 (Premium Grade A)',
-        MOVE_TO_BIN_2: '✅ Action: MOVE_TO_BIN_2 (Standard Grade B)',
-        MOVE_TO_BIN_7: '♻️ Action: MOVE_TO_BIN_7 (E-Waste / Circuit Recycling)',
+        MOVE_TO_BIN_1: '✅ Action: MOVE_TO_BIN_1 (Biomass Premium Grade A)',
+        MOVE_TO_BIN_2: '✅ Action: MOVE_TO_BIN_2 (Biomass Standard Grade B)',
+        MOVE_TO_BIN_3: '♻️ Action: MOVE_TO_BIN_3 (Plastic Recycling)',
+        MOVE_TO_BIN_4: '🌿 Action: MOVE_TO_BIN_4 (Organic / Composting)',
+        MOVE_TO_BIN_5: '🔋 Action: MOVE_TO_BIN_5 (Battery Safe Containment)',
+        MOVE_TO_BIN_6: '🔌 Action: MOVE_TO_BIN_6 (Circuit / Precious Metal Recovery)',
+        MOVE_TO_BIN_7: '💻 Action: MOVE_TO_BIN_7 (E-Waste Recycling)',
         REJECT_TO_CONVEYOR: '⚠️ Action: REJECT_TO_CONVEYOR (Low Quality)',
-        EMERGENCY_STOP: '🚨 Action: EMERGENCY STOP - Manual inspection required',
+        EMERGENCY_STOP: '🚨 Action: EMERGENCY STOP - Hazardous material detected',
       };
 
       const isEmergency = data.robotCommand.action === 'EMERGENCY_STOP';
@@ -494,9 +500,16 @@ export default function AIScan() {
             <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
-                <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception.grade)}`}>
-                  Grade {perception.grade}
-                </span>
+                <div className="flex items-center gap-2">
+                  {perception.wasteGrade && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                      {perception.wasteGrade}
+                    </span>
+                  )}
+                  <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception.grade)}`}>
+                    Grade {perception.grade}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-4">

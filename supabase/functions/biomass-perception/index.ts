@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface PerceptionResult {
   biomassType: string;
+  wasteGrade: string;
   grade: "A" | "B" | "C";
   moisture: string;
   calorificValue: string;
@@ -19,7 +20,7 @@ interface PerceptionResult {
 }
 
 interface RobotCommand {
-  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "MOVE_TO_BIN_7" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
+  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "MOVE_TO_BIN_3" | "MOVE_TO_BIN_4" | "MOVE_TO_BIN_5" | "MOVE_TO_BIN_6" | "MOVE_TO_BIN_7" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
   targetBin: number | null;
   priority: "normal" | "high" | "emergency";
   timestamp: string;
@@ -134,32 +135,42 @@ serve(async (req) => {
     }
 
     // Step 1 & 2: AI Grading and Contamination Check using Gemini Vision
-    const systemPrompt = `You are a universal waste and material quality assessment AI for industrial robotics. Analyze the image and identify the type of waste or material — it could be biomass (wood pellet, sawdust, palm shell, wood chip), plastic, metal, organic waste, e-waste, textile, rubber, glass, paper, or any other material.
+    const systemPrompt = `You are a Universal Waste Management Expert AI for industrial robotics. Your role is to identify ANY type of waste or material from images and classify them for automated sorting.
 
-IMPORTANT E-WASTE RULES:
-- If you see circuits, wires, cables, PCBs, electronic components, batteries, or any electronic device, classify biomassType as "E-Waste" or "Circuit Board" (NOT as contamination).
-- E-Waste is a VALID waste category, NOT contamination. Set contamination.detected = false for e-waste.
-- Grade e-waste based on recyclability: Grade A = intact components, Grade B = mixed electronics, Grade C = damaged/hazardous.
+WASTE CATEGORIES & CODES:
+1. BIOMASS - Wood pellet, sawdust, palm shell, wood chip, organic plant material
+2. PLASTIC - Bottles, bags, containers, packaging, any plastic material
+3. ORGANIC - Food waste, garden waste, compostable materials
+4. BATTERY - Batteries of any type (lithium, alkaline, lead-acid)
+5. CIRCUIT - Circuit boards, PCBs, chips, electronic components, wires, cables
+6. E-WASTE - General electronic waste (phones, monitors, keyboards, appliances)
+7. METAL - Metal scrap, cans, aluminum, steel, iron
+
+CRITICAL RULES:
+- Circuits, wires, PCBs, electronic components are NEVER contamination. They are CIRCUIT or E-WASTE.
+- Batteries are NEVER contamination. They are BATTERY.
+- Only mark contamination.detected = true for hazardous chemical spills or truly dangerous mixtures.
+- Set contamination.detected = false for all valid recyclable categories above.
 
 Return a JSON object with these exact fields:
 {
-  "biomassType": "string (the identified material type, e.g., 'Wood Pellet', 'E-Waste', 'Circuit Board', 'Plastic Bottle', 'Organic Waste', 'Metal Scrap', 'Textile', 'Unknown')",
+  "biomassType": "string (human-readable name, e.g., 'Wood Pellet', 'Circuit Board', 'Plastic Bottle', 'Food Waste', 'Lithium Battery', 'Metal Scrap')",
+  "wasteGrade": "string (short code for Kiro agent: 'BIOMASS', 'PLASTIC', 'ORGANIC', 'BATTERY', 'CIRCUIT', 'E-WASTE', 'METAL', 'UNKNOWN')",
   "grade": "A, B, or C",
   "moisture": "string (e.g., '≤20%', '20-30%', '>30%', 'N/A' if not applicable)",
   "calorificValue": "string (e.g., '4,500+ kcal/kg', 'N/A' if not applicable)",
   "contamination": {
     "detected": boolean,
-    "type": "string or null (e.g., 'mixed materials', 'hazardous chemical', 'stones', null if none)"
+    "type": "string or null (only for hazardous chemical contamination, null otherwise)"
   },
   "confidence": number between 0-100
 }
 
 Grading criteria:
-- Grade A: High recyclability/reuse value, clean, sorted, no contamination
-- Grade B: Medium value, some impurities, partially sorted
-- Grade C: Low value, heavily mixed or contaminated, needs significant processing
+- Grade A: High recyclability/reuse value, clean, sorted, intact
+- Grade B: Medium value, some impurities, partially sorted, mixed condition
+- Grade C: Low value, heavily mixed, damaged, needs significant processing
 
-If hazardous chemical contamination is detected (NOT electronics), mark contamination.detected as true.
 Return ONLY valid JSON, no markdown or explanation.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -235,23 +246,27 @@ Return ONLY valid JSON, no markdown or explanation.`;
       };
     }
 
-    // Step 3: Generate Robot Command
+    // Step 3: Generate Robot Command based on wasteGrade code
     let robotCommand: RobotCommand;
     
-    // Check if it's e-waste/electronics — route to BIN_7, NOT emergency stop
-    const eWasteTypes = ['E-Waste', 'Circuit Board', 'Electronics', 'PCB'];
-    const isEWaste = eWasteTypes.some(t => perception.biomassType.toLowerCase().includes(t.toLowerCase()));
+    // Map wasteGrade to bin routing
+    const wasteGrade = (perception.wasteGrade || 'UNKNOWN').toUpperCase();
     
-    if (isEWaste) {
-      robotCommand = {
-        action: "MOVE_TO_BIN_7",
-        targetBin: 7,
-        priority: "high",
-        timestamp: new Date().toISOString(),
-        perceptionData: perception,
-      };
-    } else if (perception.contamination.detected) {
-      // Emergency stop only for hazardous chemical contamination
+    const wasteRoutingMap: Record<string, { action: RobotCommand['action']; targetBin: number | null; priority: RobotCommand['priority'] }> = {
+      'BIOMASS': perception.grade === 'A' 
+        ? { action: 'MOVE_TO_BIN_1', targetBin: 1, priority: 'high' }
+        : perception.grade === 'B'
+        ? { action: 'MOVE_TO_BIN_2', targetBin: 2, priority: 'normal' }
+        : { action: 'REJECT_TO_CONVEYOR', targetBin: null, priority: 'normal' },
+      'PLASTIC': { action: 'MOVE_TO_BIN_3', targetBin: 3, priority: 'normal' },
+      'ORGANIC': { action: 'MOVE_TO_BIN_4', targetBin: 4, priority: 'normal' },
+      'BATTERY': { action: 'MOVE_TO_BIN_5', targetBin: 5, priority: 'high' },
+      'CIRCUIT': { action: 'MOVE_TO_BIN_6', targetBin: 6, priority: 'high' },
+      'E-WASTE': { action: 'MOVE_TO_BIN_7', targetBin: 7, priority: 'high' },
+      'METAL': { action: 'MOVE_TO_BIN_3', targetBin: 3, priority: 'normal' },
+    };
+
+    if (perception.contamination.detected) {
       robotCommand = {
         action: "EMERGENCY_STOP",
         targetBin: null,
@@ -260,18 +275,11 @@ Return ONLY valid JSON, no markdown or explanation.`;
         perceptionData: perception,
       };
     } else {
-      // Normal grading-based routing
-      const actionMap = {
-        A: { action: "MOVE_TO_BIN_1" as const, targetBin: 1 },
-        B: { action: "MOVE_TO_BIN_2" as const, targetBin: 2 },
-        C: { action: "REJECT_TO_CONVEYOR" as const, targetBin: null },
-      };
-
-      const { action, targetBin } = actionMap[perception.grade];
+      const routing = wasteRoutingMap[wasteGrade] || { action: 'REJECT_TO_CONVEYOR' as const, targetBin: null, priority: 'normal' as const };
       robotCommand = {
-        action,
-        targetBin,
-        priority: perception.grade === "A" ? "high" : "normal",
+        action: routing.action,
+        targetBin: routing.targetBin,
+        priority: routing.priority,
         timestamp: new Date().toISOString(),
         perceptionData: perception,
       };
