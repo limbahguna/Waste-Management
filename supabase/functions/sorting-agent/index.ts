@@ -5,9 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-interface BiomassData {
+interface WasteData {
   grade: string;
   biomassType: string;
+  wasteGrade: string;
   moisture: number;
   calorificValue: number;
   confidence: number;
@@ -20,13 +21,15 @@ interface BiomassData {
 interface SortingDecision {
   robotCommand: string;
   targetBin: string;
+  wasteGrade: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW' | 'EMERGENCY';
   reasoning: string;
   processingNotes: string;
   estimatedValue: string;
 }
 
-// Carbon saving factors per kg based on biomass type and grade
+// Carbon saving factors per kg based on waste type and grade
+// For e-waste/batteries: includes toxic substance prevention (lead, mercury, cadmium)
 const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'Wood Pellet': { 'A': 1.8, 'B': 1.5, 'C': 1.0 },
   'Cangkang Sawit': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
@@ -34,15 +37,19 @@ const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'Wood Chip': { 'A': 1.5, 'B': 1.3, 'C': 0.9 },
   'Serbuk Kayu': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
   'Sawdust': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
-  'E-Waste': { 'A': 0.8, 'B': 0.5, 'C': 0.3 },
-  'Circuit Board': { 'A': 0.9, 'B': 0.6, 'C': 0.3 },
-  'Plastic Bottle': { 'A': 1.0, 'B': 0.7, 'C': 0.4 },
-  'Metal Scrap': { 'A': 1.3, 'B': 1.0, 'C': 0.6 },
+  'BIOMASS': { 'A': 1.5, 'B': 1.2, 'C': 0.8 },
+  'PLASTIC': { 'A': 1.1, 'B': 0.8, 'C': 0.5 },
+  'ORGANIC': { 'A': 0.6, 'B': 0.4, 'C': 0.2 },
+  'BATTERY': { 'A': 2.5, 'B': 2.0, 'C': 1.5 }, // High: prevents toxic lead/mercury leaching
+  'CIRCUIT': { 'A': 3.0, 'B': 2.2, 'C': 1.2 }, // High: precious metal recovery (gold/copper)
+  'E-WASTE': { 'A': 2.0, 'B': 1.5, 'C': 0.8 }, // Prevents toxic PCB/mercury contamination
+  'METAL': { 'A': 1.8, 'B': 1.3, 'C': 0.7 },
   'default': { 'A': 1.5, 'B': 1.2, 'C': 0.8 }
 };
 
-function calculateCarbonSaved(biomassType: string, grade: string, estimatedWeight: number = 1): number {
-  const typeFactors = CARBON_FACTORS[biomassType] || CARBON_FACTORS['default'];
+function calculateCarbonSaved(wasteGrade: string, biomassType: string, grade: string, estimatedWeight: number = 1): number {
+  // Try wasteGrade code first, then biomassType name, then default
+  const typeFactors = CARBON_FACTORS[wasteGrade] || CARBON_FACTORS[biomassType] || CARBON_FACTORS['default'];
   const factor = typeFactors[grade] || typeFactors['B'];
   return parseFloat((estimatedWeight * factor).toFixed(2));
 }
@@ -64,33 +71,47 @@ serve(async (req) => {
       console.warn('VULTR_ROBOT_API not configured - robot commands will not be sent');
     }
 
-    const { biomassData } = await req.json() as { biomassData: BiomassData };
+    const { biomassData } = await req.json() as { biomassData: WasteData };
 
     if (!biomassData) {
-      throw new Error('Biomass data is required');
+      throw new Error('Waste data is required');
     }
 
-    console.log('📥 Received biomass data for Groq sorting decision:', biomassData);
+    console.log('📥 Received waste data for Groq sorting decision:', biomassData);
 
     // Build the prompt for Groq
-    const systemPrompt = `You are an intelligent sorting agent for a universal waste recycling facility. Your role is to analyze waste perception data and determine the optimal sorting route, priority, and robot commands.
+    const systemPrompt = `You are an intelligent Universal Waste Management Expert agent. Your role is to analyze waste perception data and determine the optimal sorting route, priority, and robot commands.
 
-SORTING RULES:
-- Grade A (Premium biomass): Route to BIN_1, HIGH priority - best quality for energy production
-- Grade B (Standard biomass): Route to BIN_2, MEDIUM priority - acceptable for secondary processing  
-- Grade C (Low Quality): Route to CONVEYOR_REJECT, LOW priority - requires additional processing
-- E-Waste / Circuit Board / Electronics: Route to BIN_7, HIGH priority - valuable electronic recycling
-- Hazardous chemical contamination ONLY: EMERGENCY_STOP, EMERGENCY priority - manual inspection required
+SORTING RULES BY WASTE CATEGORY:
+- BIOMASS (Wood/Shell) Grade A: MOVE_TO_BIN_1, HIGH priority
+- BIOMASS (Wood/Shell) Grade B: MOVE_TO_BIN_2, MEDIUM priority
+- BIOMASS Grade C: REJECT_TO_CONVEYOR, LOW priority
+- PLASTIC: MOVE_TO_BIN_3, MEDIUM priority - recyclable plastic processing
+- ORGANIC: MOVE_TO_BIN_4, MEDIUM priority - composting/biogas
+- BATTERY: MOVE_TO_BIN_5, HIGH priority - hazardous but valuable, safe containment
+- CIRCUIT (PCB/chips/wires): MOVE_TO_BIN_6, HIGH priority - precious metal recovery
+- E-WASTE (general electronics): MOVE_TO_BIN_7, HIGH priority - electronic recycling
+- Hazardous chemical contamination ONLY: EMERGENCY_STOP, EMERGENCY priority
 
-CRITICAL: Circuits, wires, PCBs, electronic components, and e-waste are NOT contamination. They are a valid recyclable category routed to BIN_7.
+CRITICAL RULES:
+- Circuits, wires, PCBs, electronic components are NEVER contamination → route to BIN_6
+- Batteries are NEVER contamination → route to BIN_5
+- General e-waste (monitors, phones, appliances) → route to BIN_7
+- ONLY trigger EMERGENCY_STOP for hazardous chemical spills
 
-Consider moisture content, calorific value (for biomass), recyclability (for non-biomass), and contamination when making decisions.
-Provide clear, concise reasoning about the perception data.`;
+COMMUNICATION STYLE:
+- Always use "Kami" (We) in your reasoning, e.g. "Kami mengidentifikasi..." or "We identified..."
+- Focus on circular economy potential in your reasoning
+- For CIRCUIT/E-WASTE: mention precious metal recovery potential (gold, copper, palladium)
+- For BATTERY: mention toxic substance prevention (lead, mercury, cadmium)
+- For PLASTIC: mention recycling loop potential
+- For ORGANIC: mention composting/biogas energy potential`;
 
     const userPrompt = `Analyze this waste perception result and determine the optimal sorting decision:
 
 === PERCEPTION DATA ===
 Waste Type: ${biomassData.biomassType}
+Waste Grade Code: ${biomassData.wasteGrade || 'UNKNOWN'}
 Quality Grade: ${biomassData.grade}
 Moisture Content: ${biomassData.moisture}%
 Calorific Value: ${biomassData.calorificValue} MJ/kg
@@ -99,12 +120,13 @@ Contamination: ${biomassData.contamination.detected ? 'DETECTED - ' + biomassDat
 
 Respond with a JSON object:
 {
-  "robotCommand": "MOVE_TO_BIN_1 | MOVE_TO_BIN_2 | MOVE_TO_BIN_7 | REJECT_TO_CONVEYOR | EMERGENCY_STOP",
-  "targetBin": "BIN_1 | BIN_2 | BIN_7 | CONVEYOR | MANUAL_INSPECTION",
+  "robotCommand": "MOVE_TO_BIN_1 | MOVE_TO_BIN_2 | MOVE_TO_BIN_3 | MOVE_TO_BIN_4 | MOVE_TO_BIN_5 | MOVE_TO_BIN_6 | MOVE_TO_BIN_7 | REJECT_TO_CONVEYOR | EMERGENCY_STOP",
+  "targetBin": "BIN_1 | BIN_2 | BIN_3 | BIN_4 | BIN_5 | BIN_6 | BIN_7 | CONVEYOR | MANUAL_INSPECTION",
+  "wasteGrade": "BIOMASS | PLASTIC | ORGANIC | BATTERY | CIRCUIT | E-WASTE | METAL | UNKNOWN",
   "priority": "HIGH | MEDIUM | LOW | EMERGENCY",
-  "reasoning": "2-3 sentence explanation about the perception data and why this sorting decision was made",
-  "processingNotes": "Any special handling instructions",
-  "estimatedValue": "Premium | Standard | Low | E-Waste Recyclable | Requires Inspection"
+  "reasoning": "2-3 sentences using 'Kami/We' style, focusing on circular economy potential and environmental impact",
+  "processingNotes": "Special handling instructions including circular economy notes",
+  "estimatedValue": "Premium | Standard | Low | Precious Metal Recovery | Toxic Prevention | Recyclable | Compostable | Requires Inspection"
 }`;
 
     console.log('🧠 Sending to Groq API (Llama-3.3-70b-versatile)...');
@@ -149,6 +171,7 @@ Respond with a JSON object:
         const robotCommand = {
           action: decision.robotCommand,
           targetBin: decision.targetBin,
+          wasteGrade: decision.wasteGrade || biomassData.wasteGrade || 'UNKNOWN',
           priority: decision.priority,
           timestamp: new Date().toISOString(),
           source: 'groq-sorting-agent',
@@ -183,9 +206,10 @@ Respond with a JSON object:
     }
 
     // Calculate carbon savings based on grade and type
-    const carbonSaved = calculateCarbonSaved(biomassData.biomassType, biomassData.grade);
+    const wasteGradeCode = decision.wasteGrade || biomassData.wasteGrade || 'default';
+    const carbonSaved = calculateCarbonSaved(wasteGradeCode, biomassData.biomassType, biomassData.grade);
 
-    console.log(`🌱 Carbon savings calculated: ${carbonSaved} kg CO₂ for ${biomassData.biomassType} Grade ${biomassData.grade}`);
+    console.log(`🌱 Carbon savings calculated: ${carbonSaved} kg CO₂ for ${wasteGradeCode}/${biomassData.biomassType} Grade ${biomassData.grade}`);
 
     return new Response(JSON.stringify({
       success: true,
