@@ -15,7 +15,7 @@ interface PerceptionResult {
 }
 
 interface RobotCommand {
-  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
+  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "MOVE_TO_BIN_7" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
   targetBin: number | null;
   priority: "normal" | "high" | "emergency";
   timestamp: string;
@@ -268,6 +268,7 @@ export default function AIScan() {
       const actionMessages: Record<string, string> = {
         MOVE_TO_BIN_1: '✅ Action: MOVE_TO_BIN_1 (Premium Grade A)',
         MOVE_TO_BIN_2: '✅ Action: MOVE_TO_BIN_2 (Standard Grade B)',
+        MOVE_TO_BIN_7: '♻️ Action: MOVE_TO_BIN_7 (E-Waste / Circuit Recycling)',
         REJECT_TO_CONVEYOR: '⚠️ Action: REJECT_TO_CONVEYOR (Low Quality)',
         EMERGENCY_STOP: '🚨 Action: EMERGENCY STOP - Manual inspection required',
       };

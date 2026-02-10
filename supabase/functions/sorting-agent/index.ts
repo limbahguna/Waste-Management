@@ -34,6 +34,10 @@ const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'Wood Chip': { 'A': 1.5, 'B': 1.3, 'C': 0.9 },
   'Serbuk Kayu': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
   'Sawdust': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
+  'E-Waste': { 'A': 0.8, 'B': 0.5, 'C': 0.3 },
+  'Circuit Board': { 'A': 0.9, 'B': 0.6, 'C': 0.3 },
+  'Plastic Bottle': { 'A': 1.0, 'B': 0.7, 'C': 0.4 },
+  'Metal Scrap': { 'A': 1.3, 'B': 1.0, 'C': 0.6 },
   'default': { 'A': 1.5, 'B': 1.2, 'C': 0.8 }
 };
 
@@ -69,21 +73,24 @@ serve(async (req) => {
     console.log('📥 Received biomass data for Groq sorting decision:', biomassData);
 
     // Build the prompt for Groq
-    const systemPrompt = `You are an intelligent sorting agent for a biomass recycling facility. Your role is to analyze biomass perception data and determine the optimal sorting route, priority, and robot commands.
+    const systemPrompt = `You are an intelligent sorting agent for a universal waste recycling facility. Your role is to analyze waste perception data and determine the optimal sorting route, priority, and robot commands.
 
 SORTING RULES:
-- Grade A (Premium): Route to BIN_1, HIGH priority - best quality for energy production
-- Grade B (Standard): Route to BIN_2, MEDIUM priority - acceptable for secondary processing  
+- Grade A (Premium biomass): Route to BIN_1, HIGH priority - best quality for energy production
+- Grade B (Standard biomass): Route to BIN_2, MEDIUM priority - acceptable for secondary processing  
 - Grade C (Low Quality): Route to CONVEYOR_REJECT, LOW priority - requires additional processing
-- Contamination Detected: EMERGENCY_STOP, EMERGENCY priority - manual inspection required
+- E-Waste / Circuit Board / Electronics: Route to BIN_7, HIGH priority - valuable electronic recycling
+- Hazardous chemical contamination ONLY: EMERGENCY_STOP, EMERGENCY priority - manual inspection required
 
-Consider moisture content (ideal: 8-12%), calorific value (higher is better), and contamination when making decisions.
+CRITICAL: Circuits, wires, PCBs, electronic components, and e-waste are NOT contamination. They are a valid recyclable category routed to BIN_7.
+
+Consider moisture content, calorific value (for biomass), recyclability (for non-biomass), and contamination when making decisions.
 Provide clear, concise reasoning about the perception data.`;
 
-    const userPrompt = `Analyze this biomass perception result and determine the optimal sorting decision:
+    const userPrompt = `Analyze this waste perception result and determine the optimal sorting decision:
 
 === PERCEPTION DATA ===
-Biomass Type: ${biomassData.biomassType}
+Waste Type: ${biomassData.biomassType}
 Quality Grade: ${biomassData.grade}
 Moisture Content: ${biomassData.moisture}%
 Calorific Value: ${biomassData.calorificValue} MJ/kg
@@ -92,12 +99,12 @@ Contamination: ${biomassData.contamination.detected ? 'DETECTED - ' + biomassDat
 
 Respond with a JSON object:
 {
-  "robotCommand": "MOVE_TO_BIN_1 | MOVE_TO_BIN_2 | REJECT_TO_CONVEYOR | EMERGENCY_STOP",
-  "targetBin": "BIN_1 | BIN_2 | CONVEYOR | MANUAL_INSPECTION",
+  "robotCommand": "MOVE_TO_BIN_1 | MOVE_TO_BIN_2 | MOVE_TO_BIN_7 | REJECT_TO_CONVEYOR | EMERGENCY_STOP",
+  "targetBin": "BIN_1 | BIN_2 | BIN_7 | CONVEYOR | MANUAL_INSPECTION",
   "priority": "HIGH | MEDIUM | LOW | EMERGENCY",
   "reasoning": "2-3 sentence explanation about the perception data and why this sorting decision was made",
   "processingNotes": "Any special handling instructions",
-  "estimatedValue": "Premium | Standard | Low | Requires Inspection"
+  "estimatedValue": "Premium | Standard | Low | E-Waste Recyclable | Requires Inspection"
 }`;
 
     console.log('🧠 Sending to Groq API (Llama-3.3-70b-versatile)...');
