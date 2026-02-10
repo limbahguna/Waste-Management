@@ -100,7 +100,7 @@ export default function AIScan() {
 
     try {
       // Step 1: Perception
-      const perceptionLogId = addLogEntry('perception', 'Analyzing biomass sample...');
+      const perceptionLogId = addLogEntry('perception', 'Analyzing waste sample...');
 
       // Extract base64 data from data URL
       const base64Data = selectedImage.split(',')[1];
@@ -363,9 +363,9 @@ export default function AIScan() {
           <div className="relative">
             <div className="aspect-[4/3] bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
               {selectedImage ? (
-                <img
+                 <img
                   src={selectedImage}
-                  alt="Biomass sample"
+                  alt="Waste sample"
                   className="w-full h-full object-contain"
                 />
               ) : (

@@ -134,25 +134,25 @@ serve(async (req) => {
     }
 
     // Step 1 & 2: AI Grading and Contamination Check using Gemini Vision
-    const systemPrompt = `You are a biomass quality assessment AI for industrial robotics. Analyze the image and return a JSON object with these exact fields:
+    const systemPrompt = `You are a universal waste and material quality assessment AI for industrial robotics. Analyze the image and identify the type of waste or material — it could be biomass (wood pellet, sawdust, palm shell, wood chip), plastic, metal, organic waste, e-waste, textile, rubber, glass, paper, or any other material. Return a JSON object with these exact fields:
 {
-  "biomassType": "string (Wood Pellet, Sawdust, Palm Shell, Wood Chip, or Unknown)",
+  "biomassType": "string (the identified material type, e.g., 'Wood Pellet', 'Plastic Bottle', 'E-Waste', 'Organic Waste', 'Metal Scrap', 'Textile', 'Unknown')",
   "grade": "A, B, or C",
-  "moisture": "string (e.g., '≤20%', '20-30%', '>30%')",
-  "calorificValue": "string (e.g., '4,500+ kcal/kg')",
+  "moisture": "string (e.g., '≤20%', '20-30%', '>30%', 'N/A' if not applicable)",
+  "calorificValue": "string (e.g., '4,500+ kcal/kg', 'N/A' if not applicable)",
   "contamination": {
     "detected": boolean,
-    "type": "string or null (e.g., 'stones', 'plastic', 'metal', null if none)"
+    "type": "string or null (e.g., 'mixed materials', 'hazardous', 'stones', null if none)"
   },
   "confidence": number between 0-100
 }
 
 Grading criteria:
-- Grade A: Premium quality, moisture ≤20%, high calorific value (4,500+ kcal/kg), no contamination
-- Grade B: Standard quality, moisture 20-30%, medium calorific value (3,800-4,500 kcal/kg), minor impurities
-- Grade C: Low quality, moisture >30%, low calorific value (<3,800 kcal/kg), needs processing
+- Grade A: High recyclability/reuse value, clean, sorted, no contamination
+- Grade B: Medium value, some impurities, partially sorted
+- Grade C: Low value, heavily mixed or contaminated, needs significant processing
 
-If contamination (stones, plastic, metal, foreign objects) is detected, mark contamination.detected as true.
+If contamination or hazardous materials are detected, mark contamination.detected as true.
 Return ONLY valid JSON, no markdown or explanation.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -176,7 +176,7 @@ Return ONLY valid JSON, no markdown or explanation.`;
               },
               {
                 type: "text",
-                text: "Analyze this biomass sample image and provide the quality assessment in JSON format.",
+                text: "Analyze this waste or material sample image and provide the quality assessment in JSON format.",
               },
             ],
           },
