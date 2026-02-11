@@ -35,6 +35,7 @@ const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'Wood Pellet': { 'A': 1.8, 'B': 1.5, 'C': 1.0 },
   'Cangkang Sawit': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
   'Palm Kernel Shell': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
+  'PALM_SHELL': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
   'Wood Chip': { 'A': 1.5, 'B': 1.3, 'C': 0.9 },
   'Serbuk Kayu': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
   'Sawdust': { 'A': 1.2, 'B': 1.0, 'C': 0.7 },
@@ -111,9 +112,10 @@ serve(async (req) => {
     const systemPrompt = `You are an intelligent Universal Waste Management Expert agent. Your role is to analyze waste perception data and determine the optimal sorting route, priority, and robot commands.
 
 SORTING RULES BY WASTE CATEGORY:
-- BIOMASS (Wood/Shell) Grade A: MOVE_TO_BIN_1, HIGH priority
-- BIOMASS (Wood/Shell) Grade B: MOVE_TO_BIN_2, MEDIUM priority
+- BIOMASS (Wood Pellet/Sawdust) Grade A: MOVE_TO_BIN_1, HIGH priority
+- BIOMASS (Wood Pellet/Sawdust) Grade B: MOVE_TO_BIN_2, MEDIUM priority
 - BIOMASS Grade C: REJECT_TO_CONVEYOR, LOW priority
+- PALM_SHELL (Cangkang Sawit / Palm Kernel Shell): ALWAYS MOVE_TO_BIN_2, HIGH priority - premium fuel source
 - PLASTIC: MOVE_TO_BIN_3, MEDIUM priority - recyclable plastic processing
 - ORGANIC: MOVE_TO_BIN_4, MEDIUM priority - composting/biogas
 - BATTERY: MOVE_TO_BIN_5, HIGH priority - hazardous but valuable, safe containment
@@ -150,16 +152,16 @@ Respond with a JSON object:
 {
   "robotCommand": "MOVE_TO_BIN_1 | MOVE_TO_BIN_2 | MOVE_TO_BIN_3 | MOVE_TO_BIN_4 | MOVE_TO_BIN_5 | MOVE_TO_BIN_6 | MOVE_TO_BIN_7 | REJECT_TO_CONVEYOR | EMERGENCY_STOP",
   "targetBin": "BIN_1 | BIN_2 | BIN_3 | BIN_4 | BIN_5 | BIN_6 | BIN_7 | CONVEYOR | MANUAL_INSPECTION",
-  "wasteGrade": "BIOMASS | PLASTIC | ORGANIC | BATTERY | CIRCUIT | E-WASTE | METAL | UNKNOWN",
+  "wasteGrade": "BIOMASS | PALM_SHELL | PLASTIC | ORGANIC | BATTERY | CIRCUIT | E-WASTE | METAL | UNKNOWN",
   "priority": "HIGH | MEDIUM | LOW | EMERGENCY",
   "reasoning": "2-3 sentences using 'Kami/We' style, focusing on circular economy potential and environmental impact",
   "processingNotes": "Special handling instructions including circular economy notes",
   "estimatedValue": "Premium | Standard | Low | Precious Metal Recovery | Toxic Prevention | Recyclable | Compostable | Requires Inspection"
 }`;
 
-    console.log('🧠 Sending to Groq API (Llama-3.3-70b-versatile)...');
+    console.log('🧠 Sending to Groq API (llama-3.1-8b-instant)...');
 
-    // Call Groq API
+    // Call Groq API - using lightweight model for <10s latency
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -167,7 +169,7 @@ Respond with a JSON object:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -244,7 +246,7 @@ Respond with a JSON object:
       decision,
       carbonSaved,
       vultrSyncStatus,
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

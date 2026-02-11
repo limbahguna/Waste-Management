@@ -138,24 +138,26 @@ serve(async (req) => {
     const systemPrompt = `You are a Universal Waste Management Expert AI for industrial robotics. Your role is to identify ANY type of waste or material from images and classify them for automated sorting.
 
 WASTE CATEGORIES & CODES:
-1. BIOMASS - Wood pellet, sawdust, palm shell, wood chip, organic plant material
-2. PLASTIC - Bottles, bags, containers, packaging, any plastic material
-3. ORGANIC - Food waste, garden waste, compostable materials
-4. BATTERY - Batteries of any type (lithium, alkaline, lead-acid)
-5. CIRCUIT - Circuit boards, PCBs, chips, electronic components, wires, cables
-6. E-WASTE - General electronic waste (phones, monitors, keyboards, appliances)
-7. METAL - Metal scrap, cans, aluminum, steel, iron
+1. PALM_SHELL - Palm Kernel Shell / Cangkang Sawit. CRITICAL VISUAL CUES: curved shell-like shape (like a coconut shell fragment), extremely hard texture, dark brown to black color, irregular broken edges. This is NOT wood chip. If you see dark curved hard shells, it is PALM_SHELL.
+2. BIOMASS - Wood pellet (cylindrical compressed wood), sawdust (fine wood powder), wood chip (flat light-colored wood fragments). Wood chips are FLAT, light brown, and soft-looking. Do NOT confuse with palm shell.
+3. PLASTIC - Bottles, bags, containers, packaging, any plastic material
+4. ORGANIC - Food waste, garden waste, compostable materials
+5. BATTERY - Batteries of any type (lithium, alkaline, lead-acid)
+6. CIRCUIT - Circuit boards, PCBs, chips, electronic components, wires, cables
+7. E-WASTE - General electronic waste (phones, monitors, keyboards, appliances)
+8. METAL - Metal scrap, cans, aluminum, steel, iron
 
-CRITICAL RULES:
+CRITICAL IDENTIFICATION RULES:
+- Palm Kernel Shell (Cangkang Sawit) has CURVED shell shape, VERY HARD, DARK brown/black color → wasteGrade must be "PALM_SHELL"
+- Wood Chip is FLAT, LIGHT colored, softer texture → wasteGrade must be "BIOMASS"
 - Circuits, wires, PCBs, electronic components are NEVER contamination. They are CIRCUIT or E-WASTE.
 - Batteries are NEVER contamination. They are BATTERY.
 - Only mark contamination.detected = true for hazardous chemical spills or truly dangerous mixtures.
-- Set contamination.detected = false for all valid recyclable categories above.
 
 Return a JSON object with these exact fields:
 {
-  "biomassType": "string (human-readable name, e.g., 'Wood Pellet', 'Circuit Board', 'Plastic Bottle', 'Food Waste', 'Lithium Battery', 'Metal Scrap')",
-  "wasteGrade": "string (short code for Kiro agent: 'BIOMASS', 'PLASTIC', 'ORGANIC', 'BATTERY', 'CIRCUIT', 'E-WASTE', 'METAL', 'UNKNOWN')",
+  "biomassType": "string (human-readable name, e.g., 'Palm Kernel Shell', 'Wood Pellet', 'Wood Chip', 'Circuit Board', 'Plastic Bottle')",
+  "wasteGrade": "string (short code: 'PALM_SHELL', 'BIOMASS', 'PLASTIC', 'ORGANIC', 'BATTERY', 'CIRCUIT', 'E-WASTE', 'METAL', 'UNKNOWN')",
   "grade": "A, B, or C",
   "moisture": "string (e.g., '≤20%', '20-30%', '>30%', 'N/A' if not applicable)",
   "calorificValue": "string (e.g., '4,500+ kcal/kg', 'N/A' if not applicable)",
@@ -258,6 +260,7 @@ Return ONLY valid JSON, no markdown or explanation.`;
         : perception.grade === 'B'
         ? { action: 'MOVE_TO_BIN_2', targetBin: 2, priority: 'normal' }
         : { action: 'REJECT_TO_CONVEYOR', targetBin: null, priority: 'normal' },
+      'PALM_SHELL': { action: 'MOVE_TO_BIN_2', targetBin: 2, priority: 'high' },
       'PLASTIC': { action: 'MOVE_TO_BIN_3', targetBin: 3, priority: 'normal' },
       'ORGANIC': { action: 'MOVE_TO_BIN_4', targetBin: 4, priority: 'normal' },
       'BATTERY': { action: 'MOVE_TO_BIN_5', targetBin: 5, priority: 'high' },
