@@ -77,13 +77,12 @@ export default function AIScan() {
     );
   };
 
-  const compressImage = (dataUrl: string, maxSizeKB: number = 500): Promise<string> => {
+  const compressImage = (dataUrl: string, maxSizeKB: number = 400): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
-        // Scale down to max 800px for faster inference
         const MAX_DIM = 800;
         if (width > MAX_DIM || height > MAX_DIM) {
           const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
@@ -94,10 +93,9 @@ export default function AIScan() {
         canvas.height = height;
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(img, 0, 0, width, height);
-        // Compress with quality reduction until under maxSizeKB
-        let quality = 0.7;
+        let quality = 0.6;
         let result = canvas.toDataURL('image/jpeg', quality);
-        while (result.length > maxSizeKB * 1370 && quality > 0.2) {
+        while (result.length > maxSizeKB * 1370 && quality > 0.1) {
           quality -= 0.1;
           result = canvas.toDataURL('image/jpeg', quality);
         }
@@ -114,7 +112,7 @@ export default function AIScan() {
       reader.onload = async (e) => {
         const rawDataUrl = e.target?.result as string;
         // Compress to max 500KB for faster inference
-        const compressed = await compressImage(rawDataUrl, 500);
+        const compressed = await compressImage(rawDataUrl, 400);
         setSelectedImage(compressed);
         setPerception(null);
         setRobotCommand(null);
