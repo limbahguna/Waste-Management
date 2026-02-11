@@ -339,8 +339,8 @@ const translations = {
       howItWorksTitle: 'Cara Kerja',
       step1Title: 'Foto Sampah Anda',
       step1Desc: 'Arahkan kamera ke sampah atau limbah di sekitar Anda. Sistem AI kami akan mengenali jenis dan kualitasnya secara otomatis.',
-      step2Title: 'Proses Cepat',
-      step2Desc: 'Foto Anda diproses sekejap oleh pusat kendali kami untuk memberikan instruksi langsung ke sistem pemilah.',
+      step2Title: 'Proses Otomatis',
+      step2Desc: 'Foto Anda dianalisis secara digital oleh pusat kendali kami untuk memberikan instruksi pemilahan yang tepat kepada agen otonom.',
       step3Title: 'Dapatkan Hadiah',
       step3Desc: 'Limbah dipilah ke tempat yang benar, dan Anda otomatis mendapatkan poin reward yang bisa ditukar dengan berbagai hadiah menarik.'
     },
@@ -708,8 +708,8 @@ const translations = {
       howItWorksTitle: 'How It Works',
       step1Title: 'Photo Your Waste',
       step1Desc: 'Point your camera at waste or trash around you. Our AI system will automatically recognize its type and quality.',
-      step2Title: 'Fast Processing',
-      step2Desc: 'Your photo is instantly processed by our control center to provide direct instructions to the sorting system.',
+      step2Title: 'Automatic Processing',
+      step2Desc: 'Your photo is digitally analyzed by our control center to provide precise sorting instructions to the autonomous agent.',
       step3Title: 'Get Rewards',
       step3Desc: 'Waste is sorted into the correct bins, and you automatically earn reward points that can be exchanged for exciting prizes.'
     },
