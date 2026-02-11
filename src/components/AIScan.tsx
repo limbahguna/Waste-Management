@@ -77,12 +77,45 @@ export default function AIScan() {
     );
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (dataUrl: string, maxSizeKB: number = 1024): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        // Scale down if too large
+        const MAX_DIM = 1280;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+        // Compress with quality reduction until under maxSizeKB
+        let quality = 0.8;
+        let result = canvas.toDataURL('image/jpeg', quality);
+        while (result.length > maxSizeKB * 1370 && quality > 0.3) { // ~1370 base64 chars per KB
+          quality -= 0.1;
+          result = canvas.toDataURL('image/jpeg', quality);
+        }
+        resolve(result);
+      };
+      img.src = dataUrl;
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
+      reader.onload = async (e) => {
+        const rawDataUrl = e.target?.result as string;
+        // Compress to max 1MB for faster inference
+        const compressed = await compressImage(rawDataUrl, 1024);
+        setSelectedImage(compressed);
         setPerception(null);
         setRobotCommand(null);
         setGroqDecision(null);
@@ -632,7 +665,7 @@ export default function AIScan() {
 
                 <div className="mt-4 pt-3 border-t border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600">
                   <Brain className="w-3 h-3" />
-                  <span>Powered by Groq LLaMA 3.3 70B</span>
+                  <span>Powered by Groq LLaMA 3.1 8B Instant</span>
                 </div>
               </div>
             )}
