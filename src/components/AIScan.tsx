@@ -48,7 +48,7 @@ interface ActionLogEntry {
 const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
 export default function AIScan() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -132,7 +132,7 @@ export default function AIScan() {
 
     try {
       // Step 1: Perception
-      const perceptionLogId = addLogEntry('perception', 'Analyzing waste sample...');
+      const perceptionLogId = addLogEntry('perception', t('logAnalyzing'));
 
       // Extract base64 data from data URL
       const base64Data = selectedImage.split(',')[1];
@@ -195,15 +195,15 @@ export default function AIScan() {
 
       // Update perception log
       updateLogEntry(perceptionLogId, 'success');
-      addLogEntry('perception', `${data.perception.biomassType} detected`, 'success');
+      addLogEntry('perception', `${data.perception.biomassType} ${t('logDetected')}`, 'success');
 
       // Step 2: Decision
-      const decisionLogId = addLogEntry('decision', 'Evaluating quality grade...');
+      const decisionLogId = addLogEntry('decision', t('logEvaluating'));
       await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
 
       if (data.perception.contamination.detected) {
         updateLogEntry(decisionLogId, 'error');
-        addLogEntry('decision', `⚠️ CONTAMINATION: ${data.perception.contamination.type} detected!`, 'error');
+        addLogEntry('decision', `⚠️ ${t('logContamination')}: ${data.perception.contamination.type}!`, 'error');
       } else {
         updateLogEntry(decisionLogId, 'success');
         addLogEntry('decision', `Grade ${data.perception.grade} (${data.perception.confidence}% confidence)`, 'success');
@@ -211,7 +211,7 @@ export default function AIScan() {
 
       // Step 3: Call Groq Sorting Agent
       setIsGroqThinking(true);
-      const groqLogId = addLogEntry('groq', '🧠 Groq is thinking...');
+      const groqLogId = addLogEntry('groq', t('logGroqThinking'));
       
       try {
         const groqResponse = await fetch(`${SUPABASE_URL}/functions/v1/sorting-agent`, {
@@ -232,7 +232,8 @@ export default function AIScan() {
                 detected: data.perception.contamination.detected,
                 types: data.perception.contamination.type ? [data.perception.contamination.type] : []
               }
-            }
+            },
+            language: language
           }),
         });
 
@@ -261,9 +262,9 @@ export default function AIScan() {
             
             // Show Vultr sync status from Groq response
             if (groqData.vultrSyncStatus === 'synced') {
-              addLogEntry('sync', '✅ Command sent to Vultr Central Brain', 'success');
+              addLogEntry('sync', t('logVultrSynced'), 'success');
             } else if (groqData.vultrSyncStatus === 'failed') {
-              addLogEntry('sync', '⚠️ Failed to sync with Vultr - command stored locally', 'error');
+              addLogEntry('sync', t('logVultrFailed'), 'error');
             }
             
             setGroqDecision(groqData.decision);
@@ -276,7 +277,7 @@ export default function AIScan() {
       } catch (groqError) {
         console.error('Groq sorting agent error:', groqError);
         updateLogEntry(groqLogId, 'error');
-        addLogEntry('groq', '⚠️ Groq unavailable - using fallback rules', 'error');
+        addLogEntry('groq', t('logGroqUnavailable'), 'error');
         // Fallback: use basic rule-based decision
         const fallbackDecision: GroqSortingDecision = {
           robotCommand: data.robotCommand.action,
@@ -295,7 +296,7 @@ export default function AIScan() {
       }
 
       // Step 4: Action - Show Final Robot Command
-      const actionLogId = addLogEntry('action', 'Generating robot command...');
+      const actionLogId = addLogEntry('action', t('logGeneratingCommand'));
       await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
 
       const actionMessages: Record<string, string> = {
@@ -426,10 +427,10 @@ export default function AIScan() {
                       <>
                         <Brain className="w-16 h-16 text-purple-400 mx-auto mb-4 animate-pulse" />
                         <p className="text-purple-400 font-semibold animate-pulse text-lg">
-                          🧠 Groq is thinking...
+                          {t('logGroqThinking')}
                         </p>
                         <p className="text-purple-300 text-sm mt-2">
-                          Determining optimal sorting route
+                          {t('logGroqRoute')}
                         </p>
                       </>
                     ) : (
@@ -499,7 +500,7 @@ export default function AIScan() {
           <div className="bg-gray-900 rounded-2xl shadow-md p-4 mb-6 border border-gray-700">
             <h3 className="font-bold text-white mb-3 flex items-center gap-2">
               <Scan className="w-5 h-5 text-emerald-400" />
-              {t('analysisLog')}
+              {t('analysisLog') !== 'analysisLog' ? t('analysisLog') : 'Analysis Log'}
             </h3>
             <div className="space-y-2">
               {actionLog
@@ -600,9 +601,9 @@ export default function AIScan() {
               <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-md p-6 border border-purple-200">
                 <div className="flex items-center gap-2 mb-4">
                   <Brain className="w-6 h-6 text-purple-600" />
-                  <h3 className="font-bold text-gray-800">Groq AI Sorting Decision</h3>
+                  <h3 className="font-bold text-gray-800">{t('groqDecisionTitle')}</h3>
                   <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(groqDecision.priority)}`}>
-                    {groqDecision.priority} PRIORITY
+                    {groqDecision.priority} {t('priorityLabel')}
                   </span>
                 </div>
 
@@ -610,7 +611,7 @@ export default function AIScan() {
                   <div className="flex items-center justify-between p-3 bg-white rounded-xl">
                     <div className="flex items-center gap-2">
                       <Bot className="w-5 h-5 text-purple-600" />
-                      <span className="text-gray-700">Robot Command</span>
+                      <span className="text-gray-700">{t('robotCommandLabel')}</span>
                     </div>
                     <span className="font-bold text-purple-800">{groqDecision.robotCommand}</span>
                   </div>
@@ -618,7 +619,7 @@ export default function AIScan() {
                   <div className="flex items-center justify-between p-3 bg-white rounded-xl">
                     <div className="flex items-center gap-2">
                       <Target className="w-5 h-5 text-purple-600" />
-                      <span className="text-gray-700">Target Bin</span>
+                      <span className="text-gray-700">{t('targetBinLabel')}</span>
                     </div>
                     <span className="font-bold text-purple-800">{groqDecision.targetBin}</span>
                   </div>
@@ -626,19 +627,19 @@ export default function AIScan() {
                   <div className="flex items-center justify-between p-3 bg-white rounded-xl">
                     <div className="flex items-center gap-2">
                       <Zap className="w-5 h-5 text-amber-600" />
-                      <span className="text-gray-700">Estimated Value</span>
+                      <span className="text-gray-700">{t('estimatedValueLabel')}</span>
                     </div>
                     <span className="font-bold text-amber-700">{groqDecision.estimatedValue}</span>
                   </div>
 
                   <div className="p-3 bg-purple-100/50 rounded-xl">
-                    <p className="text-sm text-purple-800 font-medium mb-1">AI Reasoning:</p>
+                    <p className="text-sm text-purple-800 font-medium mb-1">{t('aiReasoningLabel')}</p>
                     <p className="text-sm text-purple-700">{groqDecision.reasoning}</p>
                   </div>
 
                   {groqDecision.processingNotes && (
                     <div className="p-3 bg-indigo-100/50 rounded-xl">
-                      <p className="text-sm text-indigo-800 font-medium mb-1">Processing Notes:</p>
+                      <p className="text-sm text-indigo-800 font-medium mb-1">{t('processingNotesLabel')}</p>
                       <p className="text-sm text-indigo-700">{groqDecision.processingNotes}</p>
                     </div>
                   )}
@@ -663,7 +664,7 @@ export default function AIScan() {
 
                 <div className="mt-4 pt-3 border-t border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600">
                   <Brain className="w-3 h-3" />
-                  <span>Powered by Groq LLaMA 3.1 8B Instant</span>
+                  <span>{t('groqPoweredBy')}</span>
                 </div>
               </div>
             )}
