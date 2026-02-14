@@ -76,7 +76,7 @@ export default function RobotCommandCenter() {
       'Palm Shell categorization',
       'Moisture level analysis',
       'Weight calibration check',
-      'Biomass grading: Grade A',
+      'Waste grading: Grade A',
     ];
     return actions[Math.floor(Math.random() * actions.length)];
   };
@@ -270,7 +270,7 @@ export default function RobotCommandCenter() {
             <div>
               <h4 className="font-bold text-emerald-300 mb-1">{t('vultrPowered') || 'Powered by Vultr VM'}</h4>
               <p className="text-sm text-emerald-200/70">
-                {t('vultrInfo') || 'The central brain for our agentic robotics system runs on Vultr Cloud infrastructure, enabling real-time coordination and AI-powered decision making for biomass sorting and processing.'}
+                {t('vultrInfo') || 'The central brain for our agentic robotics system runs on Vultr Cloud infrastructure, enabling real-time coordination and AI-powered decision making for waste sorting and processing.'}
               </p>
             </div>
           </div>

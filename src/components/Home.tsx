@@ -326,7 +326,7 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </div>
         </div>
 
-        {/* AI Scan Biomass Button - Below Product Categories */}
+        {/* AI Scan Waste Button - Below Product Categories */}
         {onNavigateToScan && (
           <button
             onClick={onNavigateToScan}
