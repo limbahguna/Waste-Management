@@ -100,7 +100,8 @@ serve(async (req) => {
       console.warn('VULTR_ROBOT_API not configured - robot commands will not be sent');
     }
 
-    const { biomassData } = await req.json() as { biomassData: WasteData };
+    const { biomassData, language } = await req.json() as { biomassData: WasteData; language?: string };
+    const userLanguage = language === 'en' ? 'English' : 'Indonesian';
 
     if (!biomassData) {
       throw new Error('Waste data is required');
@@ -110,6 +111,8 @@ serve(async (req) => {
 
     // Build the prompt for Groq
     const systemPrompt = `You are an intelligent Universal Waste Management Expert agent. Your role is to analyze waste perception data and determine the optimal sorting route, priority, and robot commands.
+
+CRITICAL: You MUST provide the "reasoning" and "processingNotes" fields in ${userLanguage}. All other fields (robotCommand, targetBin, wasteGrade, priority, estimatedValue) remain in English as technical codes.
 
 SORTING RULES BY WASTE CATEGORY:
 - BIOMASS (Wood Pellet/Sawdust) Grade A: MOVE_TO_BIN_1, HIGH priority
@@ -132,7 +135,8 @@ CRITICAL RULES:
 COMMUNICATION STYLE:
 - Always use "Kami" (We) in your reasoning, e.g. "Kami mengidentifikasi..." or "We identified..."
 - Focus on circular economy potential in your reasoning
-- For CIRCUIT/E-WASTE: mention precious metal recovery potential (gold, copper, palladium)
+- For CIRCUIT routed to BIN_6: reasoning MUST mention "precious metal recovery potential (Au, Cu, Pd)" and "circular economy efficiency"
+- For E-WASTE routed to BIN_7: reasoning MUST mention "resource conservation" and "environmental impact reduction"
 - For BATTERY: mention toxic substance prevention (lead, mercury, cadmium)
 - For PLASTIC: mention recycling loop potential
 - For ORGANIC: mention composting/biogas energy potential`;
