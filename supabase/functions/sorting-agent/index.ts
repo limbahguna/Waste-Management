@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface WasteData {
   grade: string;
-  biomassType: string;
+  wasteType: string;
   wasteGrade: string;
   moisture: number;
   calorificValue: number;
@@ -30,7 +30,6 @@ interface SortingDecision {
 }
 
 // Carbon saving factors per kg based on waste type and grade
-// For e-waste/batteries: includes toxic substance prevention (lead, mercury, cadmium)
 const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'Wood Pellet': { 'A': 1.8, 'B': 1.5, 'C': 1.0 },
   'Cangkang Sawit': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
@@ -42,16 +41,15 @@ const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'BIOMASS': { 'A': 1.5, 'B': 1.2, 'C': 0.8 },
   'PLASTIC': { 'A': 1.1, 'B': 0.8, 'C': 0.5 },
   'ORGANIC': { 'A': 0.6, 'B': 0.4, 'C': 0.2 },
-  'BATTERY': { 'A': 2.5, 'B': 2.0, 'C': 1.5 }, // High: prevents toxic lead/mercury leaching
-  'CIRCUIT': { 'A': 3.0, 'B': 2.2, 'C': 1.2 }, // High: precious metal recovery (gold/copper)
-  'E-WASTE': { 'A': 2.0, 'B': 1.5, 'C': 0.8 }, // Prevents toxic PCB/mercury contamination
+  'BATTERY': { 'A': 2.5, 'B': 2.0, 'C': 1.5 },
+  'CIRCUIT': { 'A': 3.0, 'B': 2.2, 'C': 1.2 },
+  'E-WASTE': { 'A': 2.0, 'B': 1.5, 'C': 0.8 },
   'METAL': { 'A': 1.8, 'B': 1.3, 'C': 0.7 },
   'default': { 'A': 1.5, 'B': 1.2, 'C': 0.8 }
 };
 
-function calculateCarbonSaved(wasteGrade: string, biomassType: string, grade: string, estimatedWeight: number = 1): number {
-  // Try wasteGrade code first, then biomassType name, then default
-  const typeFactors = CARBON_FACTORS[wasteGrade] || CARBON_FACTORS[biomassType] || CARBON_FACTORS['default'];
+function calculateCarbonSaved(wasteGrade: string, wasteType: string, grade: string, estimatedWeight: number = 1): number {
+  const typeFactors = CARBON_FACTORS[wasteGrade] || CARBON_FACTORS[wasteType] || CARBON_FACTORS['default'];
   const factor = typeFactors[grade] || typeFactors['B'];
   return parseFloat((estimatedWeight * factor).toFixed(2));
 }
@@ -100,14 +98,14 @@ serve(async (req) => {
       console.warn('VULTR_ROBOT_API not configured - robot commands will not be sent');
     }
 
-    const { biomassData, language } = await req.json() as { biomassData: WasteData; language?: string };
+    const { wasteData, language } = await req.json() as { wasteData: WasteData; language?: string };
     const userLanguage = language === 'en' ? 'English' : 'Indonesian';
 
-    if (!biomassData) {
+    if (!wasteData) {
       throw new Error('Waste data is required');
     }
 
-    console.log('📥 Received waste data for Groq sorting decision:', biomassData);
+    console.log('📥 Received waste data for Groq sorting decision:', wasteData);
 
     // Build the prompt for Groq
     const systemPrompt = `You are an intelligent Universal Waste Management Expert agent. Your role is to analyze waste perception data and determine the optimal sorting route, priority, and robot commands.
@@ -149,13 +147,13 @@ COMMUNICATION STYLE:
     const userPrompt = `Analyze this waste perception result and determine the optimal sorting decision:
 
 === PERCEPTION DATA ===
-Waste Type: ${biomassData.biomassType}
-Waste Grade Code: ${biomassData.wasteGrade || 'UNKNOWN'}
-Quality Grade: ${biomassData.grade}
-Moisture Content: ${biomassData.moisture}%
-Calorific Value: ${biomassData.calorificValue} MJ/kg
-AI Confidence: ${biomassData.confidence}%
-Contamination: ${biomassData.contamination.detected ? 'DETECTED - ' + biomassData.contamination.types.join(', ') : 'None detected'}
+Waste Type: ${wasteData.wasteType}
+Waste Grade Code: ${wasteData.wasteGrade || 'UNKNOWN'}
+Quality Grade: ${wasteData.grade}
+Moisture Content: ${wasteData.moisture}%
+Calorific Value: ${wasteData.calorificValue} MJ/kg
+AI Confidence: ${wasteData.confidence}%
+Contamination: ${wasteData.contamination.detected ? 'DETECTED - ' + wasteData.contamination.types.join(', ') : 'None detected'}
 
 Respond with a JSON object:
 {
@@ -170,7 +168,7 @@ Respond with a JSON object:
 
     console.log('🧠 Sending to Groq API (llama-3.1-8b-instant)...');
 
-    // Call Groq API - using lightweight model for <10s latency
+    // Call Groq API
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -183,7 +181,7 @@ Respond with a JSON object:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.1, // Low temperature for consistent decisions
+        temperature: 0.1,
         max_tokens: 500,
         response_format: { type: 'json_object' }
       }),
@@ -210,11 +208,11 @@ Respond with a JSON object:
         const robotCommand = {
           action: decision.robotCommand,
           targetBin: decision.targetBin,
-          wasteGrade: decision.wasteGrade || biomassData.wasteGrade || 'UNKNOWN',
+          wasteGrade: decision.wasteGrade || wasteData.wasteGrade || 'UNKNOWN',
           priority: decision.priority,
           timestamp: new Date().toISOString(),
           source: 'groq-sorting-agent',
-          perceptionData: biomassData,
+          perceptionData: wasteData,
           aiDecision: {
             reasoning: decision.reasoning,
             processingNotes: decision.processingNotes,
@@ -245,10 +243,10 @@ Respond with a JSON object:
     }
 
     // Calculate carbon savings based on grade and type
-    const wasteGradeCode = decision.wasteGrade || biomassData.wasteGrade || 'default';
-    const carbonSaved = calculateCarbonSaved(wasteGradeCode, biomassData.biomassType, biomassData.grade);
+    const wasteGradeCode = decision.wasteGrade || wasteData.wasteGrade || 'default';
+    const carbonSaved = calculateCarbonSaved(wasteGradeCode, wasteData.wasteType, wasteData.grade);
 
-    console.log(`🌱 Carbon savings calculated: ${carbonSaved} kg CO₂ for ${wasteGradeCode}/${biomassData.biomassType} Grade ${biomassData.grade}`);
+    console.log(`🌱 Carbon savings calculated: ${carbonSaved} kg CO₂ for ${wasteGradeCode}/${wasteData.wasteType} Grade ${wasteData.grade}`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -264,7 +262,6 @@ Respond with a JSON object:
   } catch (error) {
     console.error('❌ Sorting agent error:', error);
     
-    // Return fallback decision for safety
     return new Response(JSON.stringify({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

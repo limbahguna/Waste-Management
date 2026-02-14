@@ -63,7 +63,7 @@ export default function Calculator() {
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('selectBiomass')}
+                {t('selectFuelType')}
               </label>
               <select
                 value={selectedFuel}

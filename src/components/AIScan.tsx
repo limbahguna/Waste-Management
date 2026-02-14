@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
 import { toast } from 'sonner';
 interface PerceptionResult {
-  biomassType: string;
+  wasteType: string;
   wasteGrade: string;
   grade: "A" | "B" | "C";
   moisture: string;
@@ -154,7 +154,7 @@ export default function AIScan() {
         }
       }
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/biomass-perception`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/waste-perception`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ export default function AIScan() {
 
       // Update perception log
       updateLogEntry(perceptionLogId, 'success');
-      addLogEntry('perception', `${data.perception.biomassType} ${t('logDetected')}`, 'success');
+      addLogEntry('perception', `${data.perception.wasteType} ${t('logDetected')}`, 'success');
 
       // Step 2: Decision
       const decisionLogId = addLogEntry('decision', t('logEvaluating'));
@@ -226,9 +226,9 @@ export default function AIScan() {
             'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify({
-            biomassData: {
+            wasteData: {
               grade: data.perception.grade,
-              biomassType: data.perception.biomassType,
+              wasteType: data.perception.wasteType,
               wasteGrade: data.perception.wasteGrade || 'UNKNOWN',
               moisture: parseFloat(data.perception.moisture),
               calorificValue: parseFloat(data.perception.calorificValue),
@@ -564,9 +564,9 @@ export default function AIScan() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <Scan className="w-5 h-5 text-emerald-600" />
-                    <span className="text-gray-700">{t('biomassType')}</span>
+                    <span className="text-gray-700">{t('wasteCategory')}</span>
                   </div>
-                  <span className="font-bold text-gray-800">{perception.biomassType}</span>
+                  <span className="font-bold text-gray-800">{perception.wasteType}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">

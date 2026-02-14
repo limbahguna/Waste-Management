@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface PerceptionResult {
-  biomassType: string;
+  wasteType: string;
   wasteGrade: string;
   grade: "A" | "B" | "C";
   moisture: string;
@@ -167,7 +167,7 @@ You MUST provide visual estimates based on appearance:
 
 Return a JSON object with these exact fields:
 {
-  "biomassType": "string (human-readable: 'Palm Kernel Shell', 'Wood Pellet', 'Wood Chip', 'Circuit Board', etc.)",
+  "wasteType": "string (human-readable: 'Palm Kernel Shell', 'Wood Pellet', 'Wood Chip', 'Circuit Board', etc.)",
   "wasteGrade": "PALM_SHELL | BIOMASS | PLASTIC | ORGANIC | BATTERY | CIRCUIT | E-WASTE | METAL | UNKNOWN",
   "grade": "A | B | C",
   "moisture": "string (e.g., '15-20%', '30-40%') - NEVER return N/A",
@@ -245,7 +245,7 @@ Return ONLY valid JSON, no markdown.`;
       console.error("Failed to parse AI response:", content);
       // Fallback to default values if parsing fails
       perception = {
-        biomassType: "Unknown",
+        wasteType: "Unknown",
         grade: "C",
         moisture: ">30%",
         calorificValue: "<3,800 kcal/kg",
@@ -301,12 +301,10 @@ Return ONLY valid JSON, no markdown.`;
     
     if (VULTR_ENDPOINT) {
       try {
-        // VULTR_ROBOT_API should be the full URL (e.g., http://45.63.75.96:3000/api/robot-control)
-        // Don't append additional path segments
         console.log(`[VULTR] Attempting sync to: ${VULTR_ENDPOINT}`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const vultrResponse = await fetch(VULTR_ENDPOINT, {
           method: "POST",
@@ -341,7 +339,7 @@ Return ONLY valid JSON, no markdown.`;
     }
 
     // Log usage for audit (non-blocking)
-    console.log(`[AUDIT] User ${userId} scanned biomass: ${perception.biomassType}, Grade: ${perception.grade}`);
+    console.log(`[AUDIT] User ${userId} scanned waste: ${perception.wasteType}, Grade: ${perception.grade}`);
 
     return new Response(
       JSON.stringify({

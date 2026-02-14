@@ -1,7 +1,7 @@
 {
   "name": "LimbahGuna",
   "short_name": "LimbahGuna",
-  "description": "Platform Ekonomi Sirkular untuk Limbah Biomassa. Ubah limbah menjadi energi dan dapatkan penghasilan.",
+  "description": "Platform Ekonomi Sirkular untuk Pengelolaan Limbah. Ubah limbah menjadi energi dan dapatkan penghasilan.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
