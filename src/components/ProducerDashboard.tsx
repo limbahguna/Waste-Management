@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale } from 'lucide-react';
+import CarbonTrendChart from './CarbonTrendChart';
 
 interface Transaction {
   id: string;
@@ -31,6 +32,7 @@ export default function ProducerDashboard() {
     totalCarbonCredits: 0,
     pendingTransactions: 0,
   });
+  const [carbonTrendData, setCarbonTrendData] = useState<{ date: string; label: string; carbon: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -42,7 +44,10 @@ export default function ProducerDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [transactionsRes, approvedTransactionsRes] = await Promise.all([
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const [transactionsRes, approvedTransactionsRes, carbonTrendRes] = await Promise.all([
         supabase
           .from('transactions')
           .select(`
@@ -66,12 +71,18 @@ export default function ProducerDashboard() {
           .from('transactions')
           .select('weight, status')
           .eq('status', 'approved')
-          .eq('type', 'supply')
+          .eq('type', 'supply'),
+
+        supabase
+          .from('transactions')
+          .select('carbon_saved, created_at')
+          .not('carbon_saved', 'is', null)
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .order('created_at', { ascending: true }),
       ]);
 
       if (transactionsRes.error) throw transactionsRes.error;
 
-      // Map the data to match our Transaction interface
       const formattedTransactions: Transaction[] = (transactionsRes.data || []).map((t: any) => ({
         id: t.id,
         user_id: t.user_id,
@@ -93,6 +104,23 @@ export default function ProducerDashboard() {
         totalCarbonCredits: carbonCredits,
         pendingTransactions: formattedTransactions.length,
       });
+
+      // Aggregate carbon data by day
+      const dailyMap = new Map<string, number>();
+      (carbonTrendRes.data || []).forEach((row: any) => {
+        const day = new Date(row.created_at).toISOString().slice(0, 10);
+        dailyMap.set(day, (dailyMap.get(day) || 0) + Number(row.carbon_saved || 0));
+      });
+
+      const trendData = Array.from(dailyMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, carbon]) => ({
+          date,
+          label: new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+          carbon,
+        }));
+
+      setCarbonTrendData(trendData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -226,6 +254,9 @@ export default function ProducerDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Carbon Savings Trend Chart */}
+        <CarbonTrendChart data={carbonTrendData} />
 
         <div className="mb-4">
           <h2 className="text-lg font-bold text-gray-800">Penawaran Masuk</h2>
