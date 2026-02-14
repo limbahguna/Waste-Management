@@ -1,6 +1,6 @@
 project_id = "ntcgtsnufvhtgaejuuzv"
 
-[functions.biomass-perception]
+[functions.waste-perception]
 verify_jwt = false
 
 [functions.sorting-agent]
