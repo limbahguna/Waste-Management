@@ -314,8 +314,8 @@ export default function AIScan() {
       await new Promise((resolve) => setTimeout(resolve, 500)); // Visual delay
 
       const actionMessages: Record<string, string> = {
-        MOVE_TO_BIN_1: '✅ Action: MOVE_TO_BIN_1 (Biomass Premium Grade A)',
-        MOVE_TO_BIN_2: '✅ Action: MOVE_TO_BIN_2 (Biomass Standard Grade B)',
+        MOVE_TO_BIN_1: '✅ Action: MOVE_TO_BIN_1 (Premium Grade A)',
+        MOVE_TO_BIN_2: '✅ Action: MOVE_TO_BIN_2 (Standard Grade B)',
         MOVE_TO_BIN_3: '♻️ Action: MOVE_TO_BIN_3 (Plastic Recycling)',
         MOVE_TO_BIN_4: '🌿 Action: MOVE_TO_BIN_4 (Organic / Composting)',
         MOVE_TO_BIN_5: '🔋 Action: MOVE_TO_BIN_5 (Battery Safe Containment)',
