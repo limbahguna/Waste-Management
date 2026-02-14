@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { User, Phone, MapPin, LogOut, Edit2, BadgeCheck, Headphones, Lock, Shield, Save, X } from 'lucide-react';
+import { User, Phone, MapPin, LogOut, Edit2, BadgeCheck, Headphones, Lock, Shield, Save, X, Bug } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useDebug } from '../contexts/DebugContext';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Profile() {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const { t } = useLanguage();
+  const { debugMode, setDebugMode, isAdmin } = useDebug();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -324,6 +326,39 @@ export default function Profile() {
             <span className="text-gray-400">›</span>
           </button>
         </div>
+
+        {/* Admin Debug Toggle */}
+        {isAdmin && (
+          <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
+            <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Bug className="w-5 h-5 text-amber-500" />
+              {t('profile.developerTools') || 'Developer Tools'}
+            </h2>
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <Bug className="w-5 h-5 text-gray-600" />
+                <div>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    {t('profile.debugMode') || 'Debug Mode'}
+                  </span>
+                  <p className="text-xs text-gray-500">
+                    {t('profile.debugModeDesc') || 'Show AI debug panel in scan results'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDebugMode(!debugMode)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  debugMode ? 'bg-amber-500' : 'bg-gray-300'
+                }`}
+              >
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  debugMode ? 'translate-x-6' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
           <button
