@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDebug } from '../contexts/DebugContext';
 import { toast } from 'sonner';
 interface PerceptionResult {
   biomassType: string;
@@ -49,6 +50,7 @@ const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
 export default function AIScan() {
   const { t, language } = useLanguage();
+  const { debugMode } = useDebug();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -683,8 +685,8 @@ export default function AIScan() {
               </div>
             )}
 
-            {/* Debug Panel */}
-            {debugData && (
+            {/* Debug Panel - Admin only */}
+            {debugMode && debugData && (
               <div className="bg-gray-900 rounded-2xl shadow-md border border-gray-700 overflow-hidden">
                 <button
                   onClick={() => setShowDebug(!showDebug)}

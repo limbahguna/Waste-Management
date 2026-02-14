@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { DebugProvider } from './contexts/DebugContext';
 import { useProducts } from './hooks/useProducts';
 import Home from './components/Home';
 import Marketplace from './components/Marketplace';
@@ -95,8 +96,10 @@ function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <AppContent />
-        <Toaster position="top-center" richColors closeButton />
+        <DebugProvider>
+          <AppContent />
+          <Toaster position="top-center" richColors closeButton />
+        </DebugProvider>
       </AuthProvider>
     </LanguageProvider>
   );
