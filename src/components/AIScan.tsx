@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target } from 'lucide-react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { toast } from 'sonner';
 interface PerceptionResult {
@@ -58,6 +58,9 @@ export default function AIScan() {
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(null);
   const [carbonSyncResult, setCarbonSyncResult] = useState<CarbonSyncResult | null>(null);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugData, setDebugData] = useState<Record<string, unknown> | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending') => {
     const entry: ActionLogEntry = {
@@ -268,6 +271,15 @@ export default function AIScan() {
             }
             
             setGroqDecision(groqData.decision);
+            setDebugData({
+              requestLanguage: language,
+              resolvedLanguage: language === 'en' ? 'English' : 'Indonesian',
+              model: groqData.model,
+              timestamp: groqData.timestamp,
+              vultrSyncStatus: groqData.vultrSyncStatus,
+              carbonSaved: groqData.carbonSaved,
+              decision: groqData.decision,
+            });
           } else {
             throw new Error(groqData.error || 'Groq decision failed');
           }
@@ -345,6 +357,8 @@ export default function AIScan() {
     setGroqDecision(null);
     setCarbonSyncResult(null);
     setActionLog([]);
+    setDebugData(null);
+    setCopied(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -666,6 +680,92 @@ export default function AIScan() {
                   <Brain className="w-3 h-3" />
                   <span>{t('groqPoweredBy')}</span>
                 </div>
+              </div>
+            )}
+
+            {/* Debug Panel */}
+            {debugData && (
+              <div className="bg-gray-900 rounded-2xl shadow-md border border-gray-700 overflow-hidden">
+                <button
+                  onClick={() => setShowDebug(!showDebug)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-800 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Bug className="w-5 h-5 text-amber-400" />
+                    <span className="font-bold text-white text-sm">Debug: Groq API Response</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-300 font-mono">
+                      {(debugData.resolvedLanguage as string) || 'unknown'}
+                    </span>
+                  </div>
+                  {showDebug ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </button>
+
+                {showDebug && (
+                  <div className="border-t border-gray-700 p-4 space-y-3">
+                    {/* Quick metadata */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-gray-800 rounded-lg p-2">
+                        <span className="text-gray-500">Request Language</span>
+                        <p className="text-emerald-400 font-mono font-bold">{debugData.requestLanguage as string}</p>
+                      </div>
+                      <div className="bg-gray-800 rounded-lg p-2">
+                        <span className="text-gray-500">Resolved Language</span>
+                        <p className="text-emerald-400 font-mono font-bold">{debugData.resolvedLanguage as string}</p>
+                      </div>
+                      <div className="bg-gray-800 rounded-lg p-2">
+                        <span className="text-gray-500">Model</span>
+                        <p className="text-blue-400 font-mono font-bold">{(debugData.model as string) || 'N/A'}</p>
+                      </div>
+                      <div className="bg-gray-800 rounded-lg p-2">
+                        <span className="text-gray-500">Vultr Sync</span>
+                        <p className={`font-mono font-bold ${debugData.vultrSyncStatus === 'synced' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {debugData.vultrSyncStatus as string}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Reasoning highlight */}
+                    <div className="bg-gray-800 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">AI Reasoning</p>
+                      <p className="text-sm text-purple-300 font-medium">
+                        {(debugData.decision as Record<string, unknown>)?.reasoning as string}
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-800 rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Processing Notes</p>
+                      <p className="text-sm text-indigo-300 font-medium">
+                        {(debugData.decision as Record<string, unknown>)?.processingNotes as string}
+                      </p>
+                    </div>
+
+                    {/* Full JSON */}
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(debugData, null, 2));
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+                        title="Copy JSON"
+                      >
+                        {copied ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-gray-400" />
+                        )}
+                      </button>
+                      <pre className="bg-gray-950 rounded-lg p-3 text-xs text-gray-300 font-mono overflow-x-auto max-h-64 overflow-y-auto">
+                        {JSON.stringify(debugData, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
