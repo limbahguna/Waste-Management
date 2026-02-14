@@ -293,6 +293,14 @@ const translations = {
       enterFullAddress: 'Masukkan alamat lengkap'
     },
 
+    supplyWaste_serbuk_kayu: 'Serbuk Kayu',
+    supplyWaste_potongan_kayu: 'Potongan Kayu',
+    supplyWaste_plastik: 'Plastik',
+    supplyWaste_batok_kelapa: 'Batok Kelapa',
+    supplyWaste_limbah_elektronik: 'Limbah Elektronik',
+    supplyWaste_sampah_organik: 'Sampah Organik',
+    supplyWaste_sampah_non_organik: 'Sampah Non Organik',
+
     wasteTypes: {
       wood_pellet: 'Wood Pellet',
       wood_chip: 'Wood Chip',
@@ -680,6 +688,14 @@ const translations = {
       phoneExample: 'Example: 08123456789',
       enterFullAddress: 'Enter full address'
     },
+
+    supplyWaste_serbuk_kayu: 'Wood Sawdust',
+    supplyWaste_potongan_kayu: 'Wood Pieces',
+    supplyWaste_plastik: 'Plastic',
+    supplyWaste_batok_kelapa: 'Coconut Shell',
+    supplyWaste_limbah_elektronik: 'Electronic Waste',
+    supplyWaste_sampah_organik: 'Organic Waste',
+    supplyWaste_sampah_non_organik: 'Non-Organic Waste',
 
     wasteTypes: {
       wood_pellet: 'Wood Pellet',
