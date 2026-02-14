@@ -17,11 +17,13 @@ export default function Supply() {
   const [loading, setLoading] = useState(false);
 
   const wasteTypes = [
-    { label: 'Serbuk Kayu', value: 'serbuk_kayu' },
-    { label: 'Potongan Kayu', value: 'potongan_kayu' },
-    { label: 'Sampah Rumah', value: 'sampah_rumah' },
-    { label: 'Plastik', value: 'plastik' },
-    { label: 'Batok Kelapa', value: 'batok_kelapa' }
+    { labelKey: 'supplyWaste_serbuk_kayu', value: 'serbuk_kayu' },
+    { labelKey: 'supplyWaste_potongan_kayu', value: 'potongan_kayu' },
+    { labelKey: 'supplyWaste_plastik', value: 'plastik' },
+    { labelKey: 'supplyWaste_batok_kelapa', value: 'batok_kelapa' },
+    { labelKey: 'supplyWaste_limbah_elektronik', value: 'limbah_elektronik' },
+    { labelKey: 'supplyWaste_sampah_organik', value: 'sampah_organik' },
+    { labelKey: 'supplyWaste_sampah_non_organik', value: 'sampah_non_organik' },
   ];
 
   const validateForm = () => {
@@ -218,7 +220,7 @@ export default function Supply() {
                 >
                   <option value="">{t('selectWasteType')}</option>
                   {wasteTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
+                    <option key={type.value} value={type.value}>{t(type.labelKey)}</option>
                   ))}
                 </select>
                 {errors.wasteType && (
