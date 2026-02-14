@@ -1,4 +1,4 @@
-import { Leaf, TrendingUp, Wind, Shield } from 'lucide-react';
+import { Recycle, TrendingUp, Wind, Shield } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Logo } from './Logo';
 import HowItWorks from './HowItWorks';
@@ -39,7 +39,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 flex items-start gap-5 hover:bg-white/15 transition-all">
               <div className="bg-green-600/40 p-4 rounded-xl flex-shrink-0">
-                <Leaf className="w-8 h-8 text-white" />
+                <Recycle className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
                 <h3 className="font-bold text-xl text-white mb-2">{t('landing.feature1Title')}</h3>
