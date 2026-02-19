@@ -1,10 +1,17 @@
-import { useState } from 'react';
-import { Truck, Camera, MapPin, Scale, CheckCircle, Gift, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Truck, Camera, MapPin, Scale, CheckCircle, Gift, AlertCircle, Bot } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
+import type { AIScanResult } from '../App';
 
-export default function Supply() {
+interface SupplyProps {
+  aiScanResult?: AIScanResult | null;
+  onSuccess?: () => void;
+}
+
+export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [wasteType, setWasteType] = useState('');
@@ -15,6 +22,16 @@ export default function Supply() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
+
+  const isFromAI = Boolean(aiScanResult);
+
+  // Pre-fill from AI scan result
+  useEffect(() => {
+    if (aiScanResult) {
+      setWasteType(`${aiScanResult.wasteType} (Grade ${aiScanResult.grade})`);
+      setPhotoPreview(aiScanResult.imageDataUrl);
+    }
+  }, [aiScanResult]);
 
   const wasteTypes = [
     { labelKey: 'supplyWaste_serbuk_kayu', value: 'serbuk_kayu' },
@@ -55,15 +72,24 @@ export default function Supply() {
     }
   };
 
+  // Convert base64 data URL to a File object for upload
+  const dataUrlToFile = (dataUrl: string, filename: string): File => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)![1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], filename, { type: mime });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     if (!user) {
-      setErrors({ form: 'Anda harus login terlebih dahulu. Silakan refresh halaman atau login ulang.' });
+      setErrors({ form: 'Anda harus login terlebih dahulu.' });
       return;
     }
 
@@ -72,58 +98,53 @@ export default function Supply() {
 
     try {
       const { data: currentUser, error: userError } = await supabase.auth.getUser();
-
       if (userError || !currentUser.user) {
         throw new Error('Session tidak valid. Silakan login ulang.');
       }
 
-      let photoUrl = null;
+      let imageUrl: string | null = null;
 
-      if (photoFile) {
-        const fileExt = photoFile.name.split('.').pop();
+      // Determine which image to upload
+      const fileToUpload: File | null = isFromAI && aiScanResult
+        ? dataUrlToFile(aiScanResult.imageDataUrl, `ai-scan-${Date.now()}.jpg`)
+        : photoFile;
+
+      if (fileToUpload) {
+        const fileExt = fileToUpload.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
 
-        console.log('Uploading photo to Supabase Storage...');
         const { error: uploadError } = await supabase.storage
           .from('products')
-          .upload(fileName, photoFile);
+          .upload(fileName, fileToUpload);
 
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw new Error(`Gagal upload foto: ${uploadError.message}`);
-        }
+        if (uploadError) throw new Error(`Gagal upload foto: ${uploadError.message}`);
 
-        const { data } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName);
-
-        photoUrl = data.publicUrl;
-        console.log('Photo uploaded successfully. Public URL:', photoUrl);
+        const { data } = supabase.storage.from('products').getPublicUrl(fileName);
+        imageUrl = data.publicUrl;
       }
 
-      const insertData = {
+      const insertData: Record<string, unknown> = {
         user_id: currentUser.user.id,
-        type: 'supply',
-        waste_type: wasteType,
-        weight: parseFloat(weight),
+        waste_type: isFromAI && aiScanResult ? aiScanResult.wasteType : wasteType,
+        weight_kg: parseFloat(weight),
         address: address.trim(),
-        photo_url: photoUrl,
+        image_url: imageUrl,
         status: 'pending',
       };
 
-      console.log('Attempting to insert transaction:', insertData);
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert(insertData)
-        .select();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw new Error(`Database Error: ${error.message} (Code: ${error.code || 'N/A'})`);
+      if (isFromAI && aiScanResult) {
+        insertData.grade = aiScanResult.grade;
+        insertData.confidence_score = aiScanResult.confidenceScore;
       }
 
-      console.log('Transaction inserted successfully:', data);
+      const { error } = await supabase.from('transactions').insert(insertData).select();
+
+      if (error) throw new Error(`Database Error: ${error.message}`);
+
+      toast.success('Setoran berhasil dikirim! Produsen akan segera menghubungi Anda.', {
+        icon: '✅',
+        duration: 4000,
+      });
 
       setShowSuccess(true);
       setWasteType('');
@@ -134,13 +155,11 @@ export default function Supply() {
 
       setTimeout(() => {
         setShowSuccess(false);
-      }, 5000);
-    } catch (err: any) {
-      console.error('Submit error:', err);
-      const errorMessage = err.message || 'Gagal mengirim penawaran. Silakan coba lagi.';
-      setErrors({
-        form: `Error: ${errorMessage}\n\nJika error terkait RLS (Row Level Security), hubungi admin untuk mengecek policy database.`
-      });
+        if (onSuccess) onSuccess();
+      }, 2000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Gagal mengirim penawaran.';
+      setErrors({ form: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -179,6 +198,19 @@ export default function Supply() {
       </div>
 
       <div className="px-6 mt-6">
+        {/* AI Scan Banner */}
+        {isFromAI && (
+          <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-xl mb-6 flex items-start gap-3">
+            <Bot className="w-6 h-6 text-purple-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-purple-800 font-bold mb-1">Data dari AI Scan</p>
+              <p className="text-purple-700 text-sm">
+                Jenis limbah dan foto telah diisi otomatis dari hasil analisis AI. Lengkapi berat dan alamat penjemputan.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-xl mb-6 flex items-start gap-3">
           <Gift className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
           <div>
@@ -206,28 +238,40 @@ export default function Supply() {
             <h3 className="font-bold text-gray-800 mb-4">{t('detailWaste')}</h3>
 
             <div className="space-y-4">
+              {/* Waste Type */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Scale className="w-4 h-4 inline mr-1" />
                   {t('wasteType')}
                 </label>
-                <select
-                  value={wasteType}
-                  onChange={(e) => setWasteType(e.target.value)}
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 ${
-                    errors.wasteType ? 'border-red-400' : 'border-gray-200'
-                  }`}
-                >
-                  <option value="">{t('selectWasteType')}</option>
-                  {wasteTypes.map(type => (
-                    <option key={type.value} value={type.value}>{t(type.labelKey)}</option>
-                  ))}
-                </select>
-                {errors.wasteType && (
-                  <p className="text-red-500 text-xs mt-1">{errors.wasteType}</p>
+                {isFromAI ? (
+                  <div className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl bg-purple-50 text-purple-800 font-medium flex items-center gap-2">
+                    <Bot className="w-4 h-4 text-purple-500" />
+                    {wasteType}
+                    <span className="ml-auto text-xs text-purple-500 font-normal">AI Decision</span>
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      value={wasteType}
+                      onChange={(e) => setWasteType(e.target.value)}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 ${
+                        errors.wasteType ? 'border-red-400' : 'border-gray-200'
+                      }`}
+                    >
+                      <option value="">{t('selectWasteType')}</option>
+                      {wasteTypes.map(type => (
+                        <option key={type.value} value={type.value}>{t(type.labelKey)}</option>
+                      ))}
+                    </select>
+                    {errors.wasteType && (
+                      <p className="text-red-500 text-xs mt-1">{errors.wasteType}</p>
+                    )}
+                  </>
                 )}
               </div>
 
+              {/* Estimated Weight */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Scale className="w-4 h-4 inline mr-1" />
@@ -249,32 +293,50 @@ export default function Supply() {
                 )}
               </div>
 
+              {/* Photo */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Camera className="w-4 h-4 inline mr-1" />
                   {t('wastePhoto')}
                 </label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
-                  />
-                  {photoPreview && (
-                    <div className="mt-3">
-                      <p className="text-xs text-gray-500 mb-2">Preview:</p>
+                {isFromAI ? (
+                  <div className="space-y-2">
+                    <div className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl bg-purple-50 flex items-center gap-2 text-purple-700 text-sm">
+                      <Camera className="w-4 h-4" />
+                      Foto dari AI Scan (terkunci)
+                    </div>
+                    {photoPreview && (
                       <img
                         src={photoPreview}
-                        alt="Preview"
-                        className="w-full h-48 object-cover rounded-xl border-2 border-green-200"
+                        alt="AI Scan Preview"
+                        className="w-full h-48 object-cover rounded-xl border-2 border-purple-200"
                       />
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">{t('optional')}</p>
-                </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
+                    />
+                    {photoPreview && (
+                      <div className="mt-3">
+                        <p className="text-xs text-gray-500 mb-2">Preview:</p>
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="w-full h-48 object-cover rounded-xl border-2 border-green-200"
+                        />
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">{t('optional')}</p>
+                  </div>
+                )}
               </div>
 
+              {/* Address */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <MapPin className="w-4 h-4 inline mr-1" />

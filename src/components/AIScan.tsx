@@ -3,6 +3,11 @@ import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, Al
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
 import { toast } from 'sonner';
+import type { AIScanResult } from '../App';
+
+interface AIScanProps {
+  onContinueToSupply?: (result: AIScanResult) => void;
+}
 interface PerceptionResult {
   wasteType: string;
   wasteGrade: string;
@@ -48,7 +53,7 @@ interface ActionLogEntry {
 
 const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
-export default function AIScan() {
+export default function AIScan({ onContinueToSupply }: AIScanProps) {
   const { t, language } = useLanguage();
   const { debugMode } = useDebug();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -771,6 +776,26 @@ export default function AIScan() {
               </div>
             )}
 
+          </div>
+        )}
+
+        {/* Lanjutkan Setor button - shown after analysis is complete */}
+        {perception && onContinueToSupply && (
+          <div className="pb-6">
+            <button
+              onClick={() => {
+                onContinueToSupply({
+                  wasteType: perception.wasteType,
+                  grade: perception.grade,
+                  confidenceScore: perception.confidence,
+                  imageDataUrl: selectedImage || '',
+                });
+              }}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              Lanjutkan Setor
+            </button>
           </div>
         )}
       </div>

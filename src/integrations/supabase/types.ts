@@ -117,49 +117,43 @@ export type Database = {
         Row: {
           address: string | null
           carbon_saved: number | null
+          confidence_score: number | null
           created_at: string | null
           description: string | null
+          grade: string | null
           id: number
-          image: string | null
           image_url: string | null
-          photo_url: string | null
           status: string | null
-          type: string
           user_id: string
           waste_type: string | null
-          weight: number | null
           weight_kg: number
         }
         Insert: {
           address?: string | null
           carbon_saved?: number | null
+          confidence_score?: number | null
           created_at?: string | null
           description?: string | null
+          grade?: string | null
           id?: number
-          image?: string | null
           image_url?: string | null
-          photo_url?: string | null
           status?: string | null
-          type: string
           user_id: string
           waste_type?: string | null
-          weight?: number | null
           weight_kg: number
         }
         Update: {
           address?: string | null
           carbon_saved?: number | null
+          confidence_score?: number | null
           created_at?: string | null
           description?: string | null
+          grade?: string | null
           id?: number
-          image?: string | null
           image_url?: string | null
-          photo_url?: string | null
           status?: string | null
-          type?: string
           user_id?: string
           waste_type?: string | null
-          weight?: number | null
           weight_kg?: number
         }
         Relationships: [
