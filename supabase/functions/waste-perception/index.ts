@@ -187,21 +187,21 @@ Return ONLY valid JSON, no markdown.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
               {
+                type: "text",
+                text: "Analyze this waste or material sample image and provide the quality assessment in JSON format.",
+              },
+              {
                 type: "image_url",
                 image_url: {
                   url: `data:image/jpeg;base64,${imageBase64}`,
                 },
-              },
-              {
-                type: "text",
-                text: "Analyze this waste or material sample image and provide the quality assessment in JSON format.",
               },
             ],
           },
@@ -210,6 +210,8 @@ Return ONLY valid JSON, no markdown.`;
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("AI Gateway error:", response.status, errorText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "AI rate limit exceeded. Please try again later." }),
@@ -222,9 +224,14 @@ Return ONLY valid JSON, no markdown.`;
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      throw new Error(`AI Gateway error: ${response.status}`);
+      // Try to parse a useful error message from the gateway
+      let gatewayMessage = `AI Gateway error: ${response.status}`;
+      try {
+        const parsed = JSON.parse(errorText);
+        if (parsed?.message) gatewayMessage = parsed.message;
+        else if (parsed?.error) gatewayMessage = parsed.error;
+      } catch { /* ignore */ }
+      throw new Error(gatewayMessage);
     }
 
     const aiResponse = await response.json();
