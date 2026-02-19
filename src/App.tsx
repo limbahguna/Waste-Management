@@ -17,6 +17,13 @@ import AIScan from './components/AIScan';
 import RobotCommandCenter from './components/RobotCommandCenter';
 import { Toaster } from 'sonner';
 
+export interface AIScanResult {
+  wasteType: string;
+  grade: string;
+  confidenceScore: number;
+  imageDataUrl: string;
+}
+
 type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
 
 function AppContent() {
@@ -24,6 +31,7 @@ function AppContent() {
   const { products, loading: productsLoading } = useProducts();
   const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
   const [showAuth, setShowAuth] = useState(false);
+  const [aiScanResult, setAiScanResult] = useState<AIScanResult | null>(null);
 
   if (authLoading) {
     return (
@@ -44,7 +52,15 @@ function AppContent() {
   }
 
   const handleNavigate = (page: NavigationPage) => {
+    if (page !== 'supply') {
+      setAiScanResult(null);
+    }
     setCurrentPage(page);
+  };
+
+  const handleContinueToSupply = (result: AIScanResult) => {
+    setAiScanResult(result);
+    setCurrentPage('supply');
   };
 
   const renderPage = () => {
@@ -60,7 +76,7 @@ function AppContent() {
           <Marketplace products={products} />
         );
       case 'supply':
-        return <Supply />;
+        return <Supply aiScanResult={aiScanResult} onSuccess={() => setCurrentPage('profile')} />;
       case 'calculator':
         return <Calculator />;
       case 'profile':
@@ -70,7 +86,7 @@ function AppContent() {
       case 'manage-products':
         return <ManageProducts />;
       case 'scan':
-        return <AIScan />;
+        return <AIScan onContinueToSupply={handleContinueToSupply} />;
       case 'robot':
         return <RobotCommandCenter />;
       default:
