@@ -41,6 +41,26 @@ interface UserHistory {
   created_at: string;
 }
 
+// Safe image component using React state to avoid innerHTML XSS
+function ImgWithFallback({ src, fallbackText }: { src: string; fallbackText: string }) {
+  const [errored, setErrored] = useState(false);
+  if (errored) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-400 text-sm">{fallbackText}</p>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt="Foto Limbah"
+      className="w-full h-full object-cover"
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
 export default function Home({ onNavigateToScan }: HomeProps) {
   const { user, profile } = useAuth();
   const { t } = useLanguage();
@@ -486,18 +506,9 @@ export default function Home({ onNavigateToScan }: HomeProps) {
                           <p className="text-xs text-gray-600 font-semibold">{t('home.wastePhoto')}:</p>
                         </div>
                         <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200 bg-gray-100">
-                          <img
+                          <ImgWithFallback
                             src={transaction.photo_url}
-                            alt="Foto Limbah"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML = `<div class="flex items-center justify-center h-full"><p class="text-gray-400 text-sm">${t('home.photoNotAvailable')}</p></div>`;
-                              }
-                            }}
+                            fallbackText={t('home.photoNotAvailable')}
                           />
                         </div>
                       </div>
