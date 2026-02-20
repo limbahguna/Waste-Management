@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
 import { toast } from 'sonner';
 import type { AIScanResult } from '../App';
+import { supabase } from '../lib/supabaseClient';
 
 interface AIScanProps {
   onContinueToSupply?: (result: AIScanResult) => void;
@@ -147,17 +148,12 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
       // Extract base64 data from data URL
       const base64Data = selectedImage.split(',')[1];
 
-      // Get auth token from localStorage
-      const supabaseAuth = localStorage.getItem('sb-ntcgtsnufvhtgaejuuzv-auth-token');
-      let authToken = '';
-      if (supabaseAuth) {
-        try {
-          const parsed = JSON.parse(supabaseAuth);
-          authToken = parsed?.access_token || '';
-        } catch (e) {
-          console.error('Failed to parse auth token');
-        }
+      // Get auth token via Supabase session (avoids manual localStorage extraction)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('Not authenticated. Please log in again.');
       }
+      const authToken = session.access_token;
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/waste-perception`, {
         method: 'POST',

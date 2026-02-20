@@ -25,7 +25,7 @@ interface DashboardStats {
 }
 
 export default function Admin() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -34,15 +34,34 @@ export default function Admin() {
     pendingTransactions: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckDone, setAdminCheckDone] = useState(false);
 
-  // Admin role check - for now we use 'producer' as admin
-  const isAdmin = profile?.role === 'producer';
+  // Server-side admin role check via user_roles table
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setAdminCheckDone(true);
+        return;
+      }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      setIsAdmin(!!data);
+      setAdminCheckDone(true);
+    };
+    checkAdmin();
+  }, [user]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (adminCheckDone && isAdmin) {
       fetchDashboardData();
     }
-  }, [isAdmin]);
+  }, [adminCheckDone, isAdmin]);
 
   const fetchDashboardData = async () => {
     try {
