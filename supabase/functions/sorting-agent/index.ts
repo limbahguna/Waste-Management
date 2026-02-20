@@ -89,6 +89,27 @@ serve(async (req) => {
     const userId = user.id;
     console.log(`🔐 Authenticated user: ${userId}`);
 
+    // Verify user is a producer - only producers can use sorting features
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      return new Response(
+        JSON.stringify({ error: 'User profile not found' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (profile.role !== 'producer') {
+      return new Response(
+        JSON.stringify({ error: 'This feature is only available for producers' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
     if (!GROQ_API_KEY) {
       throw new Error('GROQ_API_KEY is not configured');
