@@ -120,12 +120,61 @@ serve(async (req) => {
       console.warn('VULTR_ROBOT_API not configured - robot commands will not be sent');
     }
 
-    const { wasteData, language } = await req.json() as { wasteData: WasteData; language?: string };
-    const userLanguage = language === 'en' ? 'English' : 'Indonesian';
-
-    if (!wasteData) {
-      throw new Error('Waste data is required');
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    const { wasteData, language } = body as { wasteData?: WasteData; language?: string };
+
+    if (!wasteData || typeof wasteData !== 'object') {
+      return new Response(JSON.stringify({ error: 'Waste data is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Validate required fields and types
+    const validGrades = ['A', 'B', 'C'];
+    const validWasteGrades = ['PALM_SHELL', 'BIOMASS', 'PLASTIC', 'ORGANIC', 'BATTERY', 'CIRCUIT', 'E-WASTE', 'METAL', 'UNKNOWN'];
+
+    if (typeof wasteData.wasteType !== 'string' || wasteData.wasteType.length > 100) {
+      return new Response(JSON.stringify({ error: 'Invalid wasteType' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (typeof wasteData.grade !== 'string' || !validGrades.includes(wasteData.grade)) {
+      return new Response(JSON.stringify({ error: 'Invalid grade. Must be A, B, or C.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (typeof wasteData.wasteGrade !== 'string' || !validWasteGrades.includes(wasteData.wasteGrade)) {
+      wasteData.wasteGrade = 'UNKNOWN'; // Default if invalid
+    }
+    if (typeof wasteData.moisture !== 'number' || wasteData.moisture < 0 || wasteData.moisture > 100) {
+      return new Response(JSON.stringify({ error: 'Invalid moisture value (0-100)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (typeof wasteData.calorificValue !== 'number' || wasteData.calorificValue < 0 || wasteData.calorificValue > 10000) {
+      return new Response(JSON.stringify({ error: 'Invalid calorificValue (0-10000)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (typeof wasteData.confidence !== 'number' || wasteData.confidence < 0 || wasteData.confidence > 100) {
+      return new Response(JSON.stringify({ error: 'Invalid confidence value (0-100)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (!wasteData.contamination || typeof wasteData.contamination.detected !== 'boolean') {
+      return new Response(JSON.stringify({ error: 'Invalid contamination data' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (wasteData.contamination.types && (!Array.isArray(wasteData.contamination.types) || wasteData.contamination.types.length > 10)) {
+      return new Response(JSON.stringify({ error: 'Invalid contamination types' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Validate language
+    const validLanguages = ['en', 'id'];
+    const safeLanguage = validLanguages.includes(language as string) ? language : 'id';
+    const userLanguage = safeLanguage === 'en' ? 'English' : 'Indonesian';
 
     console.log('📥 Received waste data for Groq sorting decision:', wasteData);
 
