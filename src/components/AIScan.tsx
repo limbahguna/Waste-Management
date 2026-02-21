@@ -232,7 +232,7 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
       });
 
     } catch (error) {
-      console.error('Processing error:', error);
+      if (import.meta.env.DEV) console.error('Processing error:', error);
       addLogEntry('error', error instanceof Error ? error.message : 'Processing failed', 'error');
     } finally {
       setIsProcessing(false);

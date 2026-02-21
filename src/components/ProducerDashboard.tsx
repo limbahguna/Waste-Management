@@ -155,7 +155,7 @@ export default function ProducerDashboard() {
 
       setCarbonTrendData(trendData);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      if (import.meta.env.DEV) console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -193,7 +193,7 @@ export default function ProducerDashboard() {
       fetchDashboardData();
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error approving transaction:', error);
+      if (import.meta.env.DEV) console.error('Error approving transaction:', error);
       toast.error(err.message);
     } finally {
       setProcessingId(null);
@@ -220,7 +220,7 @@ export default function ProducerDashboard() {
       fetchDashboardData();
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error rejecting transaction:', error);
+      if (import.meta.env.DEV) console.error('Error rejecting transaction:', error);
       toast.error(err.message);
     } finally {
       setProcessingId(null);

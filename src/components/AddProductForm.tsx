@@ -52,14 +52,14 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
       const timestamp = Date.now();
       const fileName = `marketplace/${timestamp}_${imageFile.name}`;
 
-      console.log('Uploading to products bucket:', fileName);
+      if (import.meta.env.DEV) console.log('Uploading to products bucket:', fileName);
 
       const { error: uploadError } = await supabase.storage
         .from('products')
         .upload(fileName, imageFile);
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        if (import.meta.env.DEV) console.error('Upload error:', uploadError);
         throw new Error(`Gagal upload gambar: ${uploadError.message}`);
       }
 
@@ -68,7 +68,7 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
         .getPublicUrl(fileName);
 
       const publicUrl = urlData.publicUrl;
-      console.log('Image uploaded. Public URL:', publicUrl);
+      if (import.meta.env.DEV) console.log('Image uploaded. Public URL:', publicUrl);
 
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -88,21 +88,21 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
         description: formData.description.trim() || null
       };
 
-      console.log('Inserting product:', productData);
+      if (import.meta.env.DEV) console.log('Inserting product:', productData);
 
       const { error: insertError } = await supabase
         .from('products')
         .insert([productData]);
 
       if (insertError) {
-        console.error('Insert error:', insertError);
+        if (import.meta.env.DEV) console.error('Insert error:', insertError);
         throw new Error(`Gagal menyimpan produk: ${insertError.message}`);
       }
 
       alert('Produk berhasil ditambahkan!');
       onSuccess();
     } catch (error: any) {
-      console.error('Error:', error);
+      if (import.meta.env.DEV) console.error('Error:', error);
       alert(error.message || 'Gagal menambahkan produk');
     } finally {
       setLoading(false);
