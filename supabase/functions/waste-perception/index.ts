@@ -60,11 +60,7 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-    if (!profile || profile.role !== "producer") {
-      return new Response(JSON.stringify({ error: "Only producers can use this feature" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    // All authenticated users can scan (both Producer and Eco Partner)
 
     if (!checkRateLimit(user.id)) {
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Max 20 scans/hour." }),
