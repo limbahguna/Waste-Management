@@ -110,7 +110,7 @@ export default function Admin() {
         pendingTransactions: formattedTransactions.length,
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      if (import.meta.env.DEV) console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }

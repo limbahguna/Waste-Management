@@ -44,7 +44,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
     supabase.auth.getUser().then(({ data }) => {
       const userId = data.user?.id || null;
       setCurrentUserId(userId);
-      console.log('Current User ID:', userId);
+      if (import.meta.env.DEV) console.log('Current User ID:', userId);
     });
   }, []);
 
@@ -100,7 +100,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
         window.location.reload();
       }
     } catch (error: any) {
-      console.error('Error deleting product:', error);
+      if (import.meta.env.DEV) console.error('Error deleting product:', error);
       alert('Gagal menghapus produk: ' + error.message);
     }
   };
@@ -194,14 +194,14 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
       const timestamp = Date.now();
       const fileName = `marketplace/${timestamp}_${imageFile.name}`;
 
-      console.log('Uploading to products bucket:', fileName);
+      if (import.meta.env.DEV) console.log('Uploading to products bucket:', fileName);
 
       const { error: uploadError } = await supabase.storage
         .from('products')
         .upload(fileName, imageFile);
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        if (import.meta.env.DEV) console.error('Upload error:', uploadError);
         throw new Error(`Gagal upload gambar: ${uploadError.message}`);
       }
 
@@ -210,7 +210,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
         .getPublicUrl(fileName);
 
       const publicUrl = urlData.publicUrl;
-      console.log('Image uploaded. Public URL:', publicUrl);
+      if (import.meta.env.DEV) console.log('Image uploaded. Public URL:', publicUrl);
 
       const productData = {
         seller_id: user.id,
@@ -224,14 +224,14 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
         description: formData.description.trim() || null
       };
 
-      console.log('Inserting product:', productData);
+      if (import.meta.env.DEV) console.log('Inserting product:', productData);
 
       const { error: insertError } = await supabase
         .from('products')
         .insert([productData]);
 
       if (insertError) {
-        console.error('Insert error:', insertError);
+        if (import.meta.env.DEV) console.error('Insert error:', insertError);
         throw new Error(`Gagal menyimpan produk: ${insertError.message}`);
       }
 
@@ -245,7 +245,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
         window.location.reload();
       }
     } catch (error: any) {
-      console.error('Error:', error);
+      if (import.meta.env.DEV) console.error('Error:', error);
       alert(error.message || t('productForm.errorAdd'));
     } finally {
       setSubmitting(false);
@@ -313,13 +313,15 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
           {filteredProducts.map(product => {
             const isOwner = currentUserId && product.sellerId === currentUserId;
 
-            console.log('Product Check:', {
-              productId: product.id,
-              productName: product.name,
-              sellerId: product.sellerId,
-              currentUserId: currentUserId,
-              isOwner: isOwner
-            });
+            if (import.meta.env.DEV) {
+              console.log('Product Check:', {
+                productId: product.id,
+                productName: product.name,
+                sellerId: product.sellerId,
+                currentUserId: currentUserId,
+                isOwner: isOwner
+              });
+            }
 
             return (
               <div key={product.id} className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow">

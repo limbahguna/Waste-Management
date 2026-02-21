@@ -84,7 +84,7 @@ export default function Profile() {
       setIsEditing(false);
       showMessage('success', t('profile.profileUpdated'));
     } catch (error: any) {
-      console.error('Error updating profile:', error);
+      if (import.meta.env.DEV) console.error('Error updating profile:', error);
       showMessage('error', t('profile.profileUpdateFailed'));
     } finally {
       setIsSaving(false);
@@ -135,7 +135,7 @@ export default function Profile() {
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
       showMessage('success', t('profile.passwordSuccess'));
     } catch (error: any) {
-      console.error('Error changing password:', error);
+      if (import.meta.env.DEV) console.error('Error changing password:', error);
       showMessage('error', t('profile.passwordError'));
     } finally {
       setIsSaving(false);
