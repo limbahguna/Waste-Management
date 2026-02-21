@@ -49,8 +49,14 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
     setLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error('User tidak terautentikasi');
+      }
+
       const timestamp = Date.now();
-      const fileName = `marketplace/${timestamp}_${imageFile.name}`;
+      const fileName = `${user.id}/${timestamp}_${imageFile.name}`;
 
       if (import.meta.env.DEV) console.log('Uploading to products bucket:', fileName);
 
@@ -60,7 +66,7 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
 
       if (uploadError) {
         if (import.meta.env.DEV) console.error('Upload error:', uploadError);
-        throw new Error(`Gagal upload gambar: ${uploadError.message}`);
+        throw new Error('Gagal upload gambar. Silakan coba lagi.');
       }
 
       const { data: urlData } = supabase.storage
@@ -69,12 +75,6 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
 
       const publicUrl = urlData.publicUrl;
       if (import.meta.env.DEV) console.log('Image uploaded. Public URL:', publicUrl);
-
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error('User tidak terautentikasi');
-      }
 
       const productData = {
         seller_id: user.id,
@@ -96,7 +96,7 @@ export function AddProductForm({ onSuccess, onCancel }: AddProductFormProps) {
 
       if (insertError) {
         if (import.meta.env.DEV) console.error('Insert error:', insertError);
-        throw new Error(`Gagal menyimpan produk: ${insertError.message}`);
+        throw new Error('Gagal menyimpan produk. Silakan coba lagi.');
       }
 
       alert('Produk berhasil ditambahkan!');

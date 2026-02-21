@@ -64,9 +64,9 @@ export default function ManageProducts() {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       fetchProducts();
-    } catch (error: unknown) {
-      const err = error as Error;
-      alert('Gagal menghapus: ' + err.message);
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Delete error:', error);
+      alert('Gagal menghapus produk. Silakan coba lagi.');
     }
   }
 
@@ -81,7 +81,7 @@ export default function ManageProducts() {
       
       // 1. Upload Gambar
       const fileExt = imageFile.name.split('.').pop();
-      const fileName = `marketplace/${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
         .from('products')
         .upload(fileName, imageFile);
@@ -119,7 +119,8 @@ export default function ManageProducts() {
 
     } catch (error: unknown) {
       const err = error as Error;
-      alert('Error: ' + err.message);
+      if (import.meta.env.DEV) console.error('Error:', err);
+      alert('Gagal menambahkan produk. Silakan coba lagi.');
     } finally {
       setUploading(false);
     }

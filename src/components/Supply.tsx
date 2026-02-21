@@ -111,13 +111,16 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
 
       if (fileToUpload) {
         const fileExt = fileToUpload.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        const fileName = `${currentUser.user.id}/${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('products')
           .upload(fileName, fileToUpload);
 
-        if (uploadError) throw new Error(`Gagal upload foto: ${uploadError.message}`);
+        if (uploadError) {
+          if (import.meta.env.DEV) console.error('Upload error:', uploadError);
+          throw new Error('Gagal upload foto. Silakan coba lagi.');
+        }
 
         const { data } = supabase.storage.from('products').getPublicUrl(fileName);
         imageUrl = data.publicUrl;
@@ -139,7 +142,10 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
 
       const { error } = await supabase.from('transactions').insert(insertData).select();
 
-      if (error) throw new Error(`Database Error: ${error.message}`);
+      if (error) {
+        if (import.meta.env.DEV) console.error('Database error:', error);
+        throw new Error('Gagal menyimpan data. Silakan coba lagi.');
+      }
 
       toast.success('Setoran berhasil dikirim! Produsen akan segera menghubungi Anda.', {
         icon: '✅',
