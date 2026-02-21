@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale } from 'lucide-react';
+import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
 
 interface Transaction {
-  id: string;
+  id: number;
   user_id: string;
-  waste_type: string;
-  weight: number;
-  address: string;
-  status: string;
-  created_at: string;
+  waste_type: string | null;
+  weight_kg: number;
+  grade: string | null;
+  confidence_score: number | null;
+  image_url: string | null;
+  address: string | null;
+  status: string | null;
+  created_at: string | null;
   profiles: {
-    full_name: string;
-    email: string;
+    full_name: string | null;
   } | null;
 }
 
@@ -26,6 +30,7 @@ interface DashboardStats {
 
 export default function ProducerDashboard() {
   const { profile } = useAuth();
+  const { language } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalTransactions: 0,
@@ -34,7 +39,51 @@ export default function ProducerDashboard() {
   });
   const [carbonTrendData, setCarbonTrendData] = useState<{ date: string; label: string; carbon: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const T = {
+    en: {
+      dashTitle: 'Producer Dashboard',
+      dashSub: 'Manage incoming waste offers from Eco Partners',
+      approved: 'Approved',
+      carbon: 'Carbon',
+      pending: 'Pending',
+      incomingOffers: 'Incoming Waste Offers',
+      incomingOffersSub: 'Review and accept waste submissions from Eco Partners',
+      noOffers: 'No pending offers',
+      noOffersSub: 'New waste offers will appear here',
+      acceptOffer: 'Accept Offer',
+      reject: 'Reject',
+      processing: 'Processing...',
+      pickupAddress: 'Pickup Address:',
+      submitted: 'Submitted:',
+      accessDenied: 'Access Denied',
+      accessDeniedMsg: 'You do not have access to this page.',
+      loadingData: 'Loading data...',
+      rewardPoints: 'Reward Points',
+    },
+    id: {
+      dashTitle: 'Dashboard Produsen',
+      dashSub: 'Kelola penawaran limbah dari Sobat Lingkungan',
+      approved: 'Disetujui',
+      carbon: 'Carbon',
+      pending: 'Pending',
+      incomingOffers: 'Penawaran Limbah Masuk',
+      incomingOffersSub: 'Review dan terima setoran limbah dari Sobat Lingkungan',
+      noOffers: 'Tidak ada penawaran pending',
+      noOffersSub: 'Penawaran baru akan muncul di sini',
+      acceptOffer: 'Terima / Jemput',
+      reject: 'Tolak',
+      processing: 'Memproses...',
+      pickupAddress: 'Alamat Penjemputan:',
+      submitted: 'Dikirim:',
+      accessDenied: 'Akses Ditolak',
+      accessDeniedMsg: 'Anda tidak memiliki akses ke halaman ini.',
+      loadingData: 'Memuat data...',
+      rewardPoints: 'Reward Poin',
+    },
+  };
+  const t = T[language] || T.en;
 
   useEffect(() => {
     if (profile?.role === 'producer') {
@@ -51,27 +100,17 @@ export default function ProducerDashboard() {
         supabase
           .from('transactions')
           .select(`
-            id,
-            user_id,
-            waste_type,
-            weight,
-            address,
-            status,
-            created_at,
-            profiles!transactions_user_id_fkey (
-              full_name,
-              email
-            )
+            id, user_id, waste_type, weight_kg, grade, confidence_score,
+            image_url, address, status, created_at,
+            profiles!transactions_user_id_fkey ( full_name )
           `)
           .eq('status', 'pending')
-          .eq('type', 'supply')
           .order('created_at', { ascending: false }),
 
         supabase
           .from('transactions')
-          .select('weight, status')
-          .eq('status', 'approved')
-          .eq('type', 'supply'),
+          .select('weight_kg, status')
+          .eq('status', 'approved'),
 
         supabase
           .from('transactions')
@@ -84,19 +123,13 @@ export default function ProducerDashboard() {
       if (transactionsRes.error) throw transactionsRes.error;
 
       const formattedTransactions: Transaction[] = (transactionsRes.data || []).map((t: any) => ({
-        id: t.id,
-        user_id: t.user_id,
-        waste_type: t.waste_type,
-        weight: t.weight,
-        address: t.address,
-        status: t.status,
-        created_at: t.created_at,
-        profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles
+        ...t,
+        profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
       }));
 
       setTransactions(formattedTransactions);
 
-      const totalWeight = approvedTransactionsRes.data?.reduce((sum, t) => sum + t.weight, 0) || 0;
+      const totalWeight = approvedTransactionsRes.data?.reduce((sum, t) => sum + t.weight_kg, 0) || 0;
       const carbonCredits = Math.round(totalWeight * 2.5);
 
       setStats({
@@ -128,45 +161,47 @@ export default function ProducerDashboard() {
     }
   };
 
-  const handleApprove = async (transactionId: string, weight: number, userId: string) => {
-    setProcessingId(transactionId);
+  const handleApprove = async (transaction: Transaction) => {
+    setProcessingId(transaction.id);
     try {
-      const pointsEarned = Math.floor(weight * 10);
+      const pointsEarned = Math.floor(transaction.weight_kg * 10);
 
-      const [updateTransactionResult] = await Promise.all([
+      const [updateResult] = await Promise.all([
         supabase
           .from('transactions')
           .update({
             status: 'approved',
-            points_earned: pointsEarned,
-            approved_by: profile?.id,
+            producer_id: profile?.id,
             approved_at: new Date().toISOString(),
           })
-          .eq('id', transactionId),
+          .eq('id', transaction.id),
 
         supabase.rpc('increment_user_points', {
-          user_id: userId,
-          points_to_add: pointsEarned
-        })
+          user_id: transaction.user_id,
+          points_to_add: pointsEarned,
+        }),
       ]);
 
-      if (updateTransactionResult.error) throw updateTransactionResult.error;
+      if (updateResult.error) throw updateResult.error;
 
-      alert(`Transaksi berhasil disetujui! User mendapat ${pointsEarned} poin.`);
+      toast.success(
+        language === 'en'
+          ? `Offer accepted! User earns ${pointsEarned} points.`
+          : `Penawaran diterima! User mendapat ${pointsEarned} poin.`,
+        { icon: '✅' }
+      );
       fetchDashboardData();
     } catch (error: unknown) {
       const err = error as Error;
       console.error('Error approving transaction:', error);
-      alert('Gagal menyetujui transaksi: ' + err.message);
+      toast.error(err.message);
     } finally {
       setProcessingId(null);
     }
   };
 
-  const handleReject = async (transactionId: string) => {
-    if (!confirm('Apakah Anda yakin ingin menolak transaksi ini?')) {
-      return;
-    }
+  const handleReject = async (transactionId: number) => {
+    if (!confirm(language === 'en' ? 'Reject this offer?' : 'Tolak penawaran ini?')) return;
 
     setProcessingId(transactionId);
     try {
@@ -174,19 +209,19 @@ export default function ProducerDashboard() {
         .from('transactions')
         .update({
           status: 'rejected',
-          approved_by: profile?.id,
+          producer_id: profile?.id,
           approved_at: new Date().toISOString(),
         })
         .eq('id', transactionId);
 
       if (error) throw error;
 
-      alert('Transaksi berhasil ditolak.');
+      toast.success(language === 'en' ? 'Offer rejected.' : 'Penawaran ditolak.', { icon: '❌' });
       fetchDashboardData();
     } catch (error: unknown) {
       const err = error as Error;
       console.error('Error rejecting transaction:', error);
-      alert('Gagal menolak transaksi: ' + err.message);
+      toast.error(err.message);
     } finally {
       setProcessingId(null);
     }
@@ -197,8 +232,8 @@ export default function ProducerDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Akses Ditolak</h1>
-          <p className="text-gray-600">Anda tidak memiliki akses ke halaman ini.</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">{t.accessDenied}</h1>
+          <p className="text-gray-600">{t.accessDeniedMsg}</p>
         </div>
       </div>
     );
@@ -209,7 +244,7 @@ export default function ProducerDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data...</p>
+          <p className="text-gray-600">{t.loadingData}</p>
         </div>
       </div>
     );
@@ -218,8 +253,8 @@ export default function ProducerDashboard() {
   return (
     <div className="pb-20 bg-gray-50 min-h-screen">
       <div className="bg-gradient-to-br from-green-400 to-green-600 text-white p-6 rounded-b-3xl shadow-lg">
-        <h1 className="text-2xl font-bold mb-2">Dashboard Produsen</h1>
-        <p className="text-sm text-green-50">Kelola penawaran limbah dari masyarakat</p>
+        <h1 className="text-2xl font-bold mb-2">{t.dashTitle}</h1>
+        <p className="text-sm text-green-50">{t.dashSub}</p>
       </div>
 
       <div className="px-6 mt-6">
@@ -229,7 +264,7 @@ export default function ProducerDashboard() {
               <div className="bg-green-100 p-2 rounded-full mb-2">
                 <Package className="w-5 h-5 text-green-600" />
               </div>
-              <p className="text-xs text-gray-600">Disetujui</p>
+              <p className="text-xs text-gray-600">{t.approved}</p>
               <p className="text-2xl font-bold text-gray-800">{stats.totalTransactions}</p>
             </div>
           </div>
@@ -239,7 +274,7 @@ export default function ProducerDashboard() {
               <div className="bg-green-100 p-2 rounded-full mb-2">
                 <Leaf className="w-5 h-5 text-green-600" />
               </div>
-              <p className="text-xs text-gray-600">Carbon</p>
+              <p className="text-xs text-gray-600">{t.carbon}</p>
               <p className="text-2xl font-bold text-gray-800">{stats.totalCarbonCredits}</p>
             </div>
           </div>
@@ -249,106 +284,112 @@ export default function ProducerDashboard() {
               <div className="bg-yellow-100 p-2 rounded-full mb-2">
                 <TrendingUp className="w-5 h-5 text-yellow-600" />
               </div>
-              <p className="text-xs text-gray-600">Pending</p>
+              <p className="text-xs text-gray-600">{t.pending}</p>
               <p className="text-2xl font-bold text-gray-800">{stats.pendingTransactions}</p>
             </div>
           </div>
         </div>
 
-        {/* Carbon Savings Trend Chart */}
         <CarbonTrendChart data={carbonTrendData} />
 
         <div className="mb-4">
-          <h2 className="text-lg font-bold text-gray-800">Penawaran Masuk</h2>
-          <p className="text-sm text-gray-600">Review dan terima setoran limbah dari Sobat Lingkungan</p>
+          <h2 className="text-lg font-bold text-gray-800">{t.incomingOffers}</h2>
+          <p className="text-sm text-gray-600">{t.incomingOffersSub}</p>
         </div>
 
         {transactions.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-md">
             <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 font-semibold mb-1">Tidak ada penawaran pending</p>
-            <p className="text-sm text-gray-400">Penawaran baru akan muncul di sini</p>
+            <p className="text-gray-500 font-semibold mb-1">{t.noOffers}</p>
+            <p className="text-sm text-gray-400">{t.noOffersSub}</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {transactions.map((transaction) => {
-              const pointsWillEarn = Math.floor(transaction.weight * 10);
-              const isProcessing = processingId === transaction.id;
+            {transactions.map((tx) => {
+              const pointsWillEarn = Math.floor(tx.weight_kg * 10);
+              const isProcessing = processingId === tx.id;
 
               return (
-                <div key={transaction.id} className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
+                <div key={tx.id} className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="bg-green-100 p-2 rounded-full">
                         <User className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-800">{transaction.profiles?.full_name || 'Unknown User'}</h3>
-                        <p className="text-xs text-gray-500">{transaction.profiles?.email || '-'}</p>
+                        <h3 className="font-bold text-gray-800">{tx.profiles?.full_name || 'Unknown User'}</h3>
+                        {tx.grade && (
+                          <span className="text-xs font-semibold text-purple-600">Grade {tx.grade} • {tx.confidence_score ? `${tx.confidence_score}%` : ''}</span>
+                        )}
                       </div>
                     </div>
                     <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-3 py-1 rounded-full">
-                      Pending
+                      {t.pending}
                     </span>
                   </div>
+
+                  {/* AI Scan Image */}
+                  {tx.image_url && (
+                    <div className="mb-3 rounded-xl overflow-hidden border border-gray-200">
+                      <img src={tx.image_url} alt="Waste scan" className="w-full h-40 object-cover" />
+                    </div>
+                  )}
 
                   <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 flex items-center gap-2">
                         <Package className="w-4 h-4" />
-                        Jenis Limbah
+                        {language === 'en' ? 'Waste Type' : 'Jenis Limbah'}
                       </span>
-                      <span className="font-semibold text-gray-800">{transaction.waste_type}</span>
+                      <span className="font-semibold text-gray-800">{tx.waste_type || '-'}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 flex items-center gap-2">
                         <Scale className="w-4 h-4" />
-                        Berat
+                        {language === 'en' ? 'Weight' : 'Berat'}
                       </span>
-                      <span className="font-semibold text-gray-800">{transaction.weight} kg</span>
+                      <span className="font-semibold text-gray-800">{tx.weight_kg} kg</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Reward Poin</span>
+                      <span className="text-gray-600">{t.rewardPoints}</span>
                       <span className="font-bold text-green-600">{pointsWillEarn} poin</span>
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border-l-4 border-blue-400 rounded p-3 mb-4">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-blue-800 font-semibold mb-1">Alamat Penjemputan:</p>
-                        <p className="text-sm text-blue-900">{transaction.address}</p>
+                  {tx.address && (
+                    <div className="bg-blue-50 border-l-4 border-blue-400 rounded p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-blue-800 font-semibold mb-1">{t.pickupAddress}</p>
+                          <p className="text-sm text-blue-900">{tx.address}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="text-xs text-gray-500 mb-4">
-                    Dikirim: {new Date(transaction.created_at).toLocaleString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
+                    {t.submitted} {tx.created_at && new Date(tx.created_at).toLocaleString(language === 'en' ? 'en-US' : 'id-ID', {
+                      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
                     })}
                   </div>
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleApprove(transaction.id, transaction.weight, transaction.user_id)}
+                      onClick={() => handleApprove(tx)}
                       disabled={isProcessing}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Truck className="w-4 h-4" />
-                      {isProcessing ? 'Memproses...' : 'Terima / Jemput'}
+                      {isProcessing ? t.processing : t.acceptOffer}
                     </button>
                     <button
-                      onClick={() => handleReject(transaction.id)}
+                      onClick={() => handleReject(tx.id)}
                       disabled={isProcessing}
                       className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <XCircle className="w-4 h-4" />
-                      Tolak
+                      {t.reject}
                     </button>
                   </div>
                 </div>

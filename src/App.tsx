@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DebugProvider } from './contexts/DebugContext';
@@ -27,12 +27,48 @@ export interface AIScanResult {
 
 type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
 
+// Navigation history stack for back button support
+
 function AppContent() {
   const { session, profile, loading: authLoading } = useAuth();
   const { products, loading: productsLoading } = useProducts();
   const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
   const [showAuth, setShowAuth] = useState(false);
   const [aiScanResult, setAiScanResult] = useState<AIScanResult | null>(null);
+  const [, setNavHistory] = useState<NavigationPage[]>(['home']);
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      const state = e.state as { page?: NavigationPage } | null;
+      
+      if (state?.page) {
+        setCurrentPage(state.page);
+        setNavHistory(prev => {
+          const idx = prev.lastIndexOf(state.page!);
+          return idx >= 0 ? prev.slice(0, idx + 1) : prev;
+        });
+      } else {
+        // Go back in our internal history
+        setNavHistory(prev => {
+          if (prev.length <= 1) return prev;
+          const newHistory = prev.slice(0, -1);
+          const previousPage = newHistory[newHistory.length - 1];
+          setCurrentPage(previousPage);
+          return newHistory;
+        });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Push initial history state
+  useEffect(() => {
+    window.history.replaceState({ page: 'home' }, '', window.location.pathname);
+  }, []);
 
   if (authLoading) {
     return (
@@ -53,21 +89,28 @@ function AppContent() {
   }
 
   const handleNavigate = (page: NavigationPage) => {
+    if (page === currentPage) return;
     if (page !== 'supply') {
       setAiScanResult(null);
     }
+    // Push to browser history
+    window.history.pushState({ page }, '', window.location.pathname);
+    setNavHistory(prev => [...prev, page]);
     setCurrentPage(page);
   };
 
   const handleContinueToSupply = (result: AIScanResult) => {
     setAiScanResult(result);
+    // Push scan→supply transition so back goes to scan
+    window.history.pushState({ page: 'supply' }, '', window.location.pathname);
+    setNavHistory(prev => [...prev, 'supply']);
     setCurrentPage('supply');
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onNavigateToScan={() => setCurrentPage('scan')} />;
+        return <Home onNavigateToScan={() => handleNavigate('scan')} />;
       case 'marketplace':
         return productsLoading ? (
           <div className="flex items-center justify-center min-h-screen">
@@ -77,7 +120,7 @@ function AppContent() {
           <Marketplace products={products} />
         );
       case 'supply':
-        return <Supply aiScanResult={aiScanResult} onSuccess={() => setCurrentPage('profile')} />;
+        return <Supply aiScanResult={aiScanResult} onSuccess={() => handleNavigate('profile')} />;
       case 'calculator':
         return <Calculator />;
       case 'profile':

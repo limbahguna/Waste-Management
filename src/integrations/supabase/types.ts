@@ -116,6 +116,7 @@ export type Database = {
       transactions: {
         Row: {
           address: string | null
+          approved_at: string | null
           carbon_saved: number | null
           confidence_score: number | null
           created_at: string | null
@@ -123,6 +124,7 @@ export type Database = {
           grade: string | null
           id: number
           image_url: string | null
+          producer_id: string | null
           status: string | null
           user_id: string
           waste_type: string | null
@@ -130,6 +132,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
           carbon_saved?: number | null
           confidence_score?: number | null
           created_at?: string | null
@@ -137,6 +140,7 @@ export type Database = {
           grade?: string | null
           id?: number
           image_url?: string | null
+          producer_id?: string | null
           status?: string | null
           user_id: string
           waste_type?: string | null
@@ -144,6 +148,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
           carbon_saved?: number | null
           confidence_score?: number | null
           created_at?: string | null
@@ -151,6 +156,7 @@ export type Database = {
           grade?: string | null
           id?: number
           image_url?: string | null
+          producer_id?: string | null
           status?: string | null
           user_id?: string
           waste_type?: string | null
