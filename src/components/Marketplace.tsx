@@ -101,7 +101,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
       }
     } catch (error: any) {
       if (import.meta.env.DEV) console.error('Error deleting product:', error);
-      alert('Gagal menghapus produk: ' + error.message);
+      alert('Gagal menghapus produk. Silakan coba lagi.');
     }
   };
 
@@ -192,7 +192,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
 
     try {
       const timestamp = Date.now();
-      const fileName = `marketplace/${timestamp}_${imageFile.name}`;
+      const fileName = `${user.id}/${timestamp}_${imageFile.name}`;
 
       if (import.meta.env.DEV) console.log('Uploading to products bucket:', fileName);
 
@@ -202,7 +202,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
 
       if (uploadError) {
         if (import.meta.env.DEV) console.error('Upload error:', uploadError);
-        throw new Error(`Gagal upload gambar: ${uploadError.message}`);
+        throw new Error('Gagal upload gambar. Silakan coba lagi.');
       }
 
       const { data: urlData } = supabase.storage
@@ -232,7 +232,7 @@ export default function Marketplace({ products, onProductsChange }: MarketplaceP
 
       if (insertError) {
         if (import.meta.env.DEV) console.error('Insert error:', insertError);
-        throw new Error(`Gagal menyimpan produk: ${insertError.message}`);
+        throw new Error('Gagal menyimpan produk. Silakan coba lagi.');
       }
 
       alert(t('productForm.successAdd'));
