@@ -67,16 +67,41 @@ serve(async (req) => {
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { imageBase64, language } = await req.json();
-    if (!imageBase64) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { imageBase64, language } = body as { imageBase64?: string; language?: string };
+
+    if (!imageBase64 || typeof imageBase64 !== "string") {
       return new Response(JSON.stringify({ error: "No image provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Validate base64 size (~750KB image limit = ~1MB base64)
+    if (imageBase64.length > 1_500_000) {
+      return new Response(JSON.stringify({ error: "Image too large. Maximum ~1MB allowed." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Validate base64 format
+    if (!/^[A-Za-z0-9+/=]+$/.test(imageBase64)) {
+      return new Response(JSON.stringify({ error: "Invalid image format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Validate language parameter
+    const validLanguages = ["en", "id"];
+    const safeLanguage = validLanguages.includes(language as string) ? language : "id";
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const userLanguage = language === 'en' ? 'English' : 'Indonesian';
+    const userLanguage = safeLanguage === 'en' ? 'English' : 'Indonesian';
 
     // UNIFIED PROMPT: Single model does perception + sorting + reasoning
     const systemPrompt = `You are a Universal Waste Management Expert AI. Analyze the waste image and provide BOTH the perception data AND the sorting decision in a single response.
