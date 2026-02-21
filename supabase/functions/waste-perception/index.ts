@@ -6,50 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface PerceptionResult {
-  wasteType: string;
-  wasteGrade: string;
-  grade: "A" | "B" | "C";
-  moisture: string;
-  calorificValue: string;
-  contamination: {
-    detected: boolean;
-    type: string | null;
-  };
-  confidence: number;
-}
-
-interface RobotCommand {
-  action: "MOVE_TO_BIN_1" | "MOVE_TO_BIN_2" | "MOVE_TO_BIN_3" | "MOVE_TO_BIN_4" | "MOVE_TO_BIN_5" | "MOVE_TO_BIN_6" | "MOVE_TO_BIN_7" | "REJECT_TO_CONVEYOR" | "EMERGENCY_STOP";
-  targetBin: number | null;
-  priority: "normal" | "high" | "emergency";
-  timestamp: string;
-  perceptionData: PerceptionResult;
-}
-
-// Simple in-memory rate limiting (resets on function cold start)
+// Simple in-memory rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const MAX_REQUESTS_PER_HOUR = 20;
 
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const userLimit = rateLimitMap.get(userId);
-  
   if (!userLimit || now > userLimit.resetTime) {
-    rateLimitMap.set(userId, {
-      count: 1,
-      resetTime: now + 3600000 // 1 hour
-    });
+    rateLimitMap.set(userId, { count: 1, resetTime: now + 3600000 });
     return true;
   }
-  
-  if (userLimit.count >= MAX_REQUESTS_PER_HOUR) {
-    return false;
-  }
-  
+  if (userLimit.count >= MAX_REQUESTS_PER_HOUR) return false;
   userLimit.count++;
   return true;
 }
+
+// Carbon saving factors per kg
+const CARBON_FACTORS: Record<string, Record<string, number>> = {
+  'BIOMASS': { 'A': 1.5, 'B': 1.2, 'C': 0.8 },
+  'PALM_SHELL': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
+  'PLASTIC': { 'A': 1.1, 'B': 0.8, 'C': 0.5 },
+  'ORGANIC': { 'A': 0.6, 'B': 0.4, 'C': 0.2 },
+  'BATTERY': { 'A': 2.5, 'B': 2.0, 'C': 1.5 },
+  'CIRCUIT': { 'A': 3.0, 'B': 2.2, 'C': 1.2 },
+  'E-WASTE': { 'A': 2.0, 'B': 1.5, 'C': 0.8 },
+  'METAL': { 'A': 1.8, 'B': 1.3, 'C': 0.7 },
+  'default': { 'A': 1.5, 'B': 1.2, 'C': 0.8 }
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -57,314 +41,238 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check
+    // Authentication
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Create Supabase client with user's auth token
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Supabase configuration is missing");
-    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // Verify user authentication
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const userId = user.id;
-
-    // Check user role - only producers can use this feature
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
-
-    if (profileError || !profile) {
-      return new Response(
-        JSON.stringify({ error: "User profile not found" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    if (!profile || profile.role !== "producer") {
+      return new Response(JSON.stringify({ error: "Only producers can use this feature" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    if (profile.role !== "producer") {
-      return new Response(
-        JSON.stringify({ error: "This feature is only available for producers" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!checkRateLimit(user.id)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Max 20 scans/hour." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Rate limiting check
-    if (!checkRateLimit(userId)) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit exceeded. Maximum 20 scans per hour." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { imageBase64 } = await req.json();
-    
+    const { imageBase64, language } = await req.json();
     if (!imageBase64) {
-      return new Response(
-        JSON.stringify({ error: "No image provided" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "No image provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Step 1 & 2: AI Grading and Contamination Check using Gemini Vision
-    const systemPrompt = `You are a Universal Waste Management Expert AI for industrial robotics. Kami (We) identify ANY type of waste from images for automated sorting.
+    const userLanguage = language === 'en' ? 'English' : 'Indonesian';
+
+    // UNIFIED PROMPT: Single model does perception + sorting + reasoning
+    const systemPrompt = `You are a Universal Waste Management Expert AI. Analyze the waste image and provide BOTH the perception data AND the sorting decision in a single response.
 
 WASTE CATEGORIES & CODES:
-1. PALM_SHELL - Palm Kernel Shell / Cangkang Sawit. CRITICAL VISUAL CUES: curved shell-like shape (like coconut shell fragments), extremely hard texture, dark brown to black color, irregular broken edges. This is NOT wood chip.
-2. BIOMASS - Wood pellet (cylindrical compressed), sawdust (fine powder), wood chip (FLAT, light brown, soft-looking). Do NOT confuse flat light wood with dark curved palm shells.
+1. PALM_SHELL - Palm Kernel Shell / Cangkang Sawit (curved, hard, dark brown/black)
+2. BIOMASS - Wood pellet (cylindrical), sawdust (fine powder), wood chip (flat, light brown)
 3. PLASTIC - Bottles, bags, containers, packaging
-4. ORGANIC - Food waste, garden waste, compostable materials
-5. BATTERY - Any battery type (lithium, alkaline, lead-acid)
-6. CIRCUIT - Circuit boards, PCBs, chips, electronic components, wires
-7. E-WASTE - General electronic waste (phones, monitors, appliances)
-8. METAL - Metal scrap, cans, aluminum, steel
+4. ORGANIC - Food waste, garden waste, compostable
+5. BATTERY - Any battery type
+6. CIRCUIT - Circuit boards, PCBs, chips, wires
+7. E-WASTE - General electronics
+8. METAL - Metal scrap, cans, aluminum
 
-CRITICAL RULES:
-- Palm Kernel Shell = CURVED, HARD, DARK → wasteGrade: "PALM_SHELL"
-- Wood Chip = FLAT, LIGHT, SOFT → wasteGrade: "BIOMASS"
-- Circuits/wires/batteries are NEVER contamination
-- Only mark contamination for hazardous chemical spills
+SORTING RULES:
+- BIOMASS Grade A → MOVE_TO_BIN_1, HIGH priority
+- BIOMASS Grade B → MOVE_TO_BIN_2, MEDIUM priority
+- BIOMASS Grade C → REJECT_TO_CONVEYOR, LOW priority
+- PALM_SHELL → MOVE_TO_BIN_2, HIGH priority
+- PLASTIC → MOVE_TO_BIN_3, MEDIUM priority
+- ORGANIC → MOVE_TO_BIN_4, MEDIUM priority
+- BATTERY → MOVE_TO_BIN_5, HIGH priority
+- CIRCUIT → MOVE_TO_BIN_6, HIGH priority
+- E-WASTE → MOVE_TO_BIN_7, HIGH priority
+- METAL → MOVE_TO_BIN_3, MEDIUM priority
+- Hazardous chemical → EMERGENCY_STOP, EMERGENCY priority
 
-MOISTURE & CALORIFIC VALUE - MANDATORY (never return N/A):
-You MUST provide visual estimates based on appearance:
-- Moisture: If material looks wet/dark/damp → "30-45%". If dry/light/crisp → "10-20%". If moderately dry → "20-30%".
-- Calorific Value estimates by type:
-  * Wood Pellet: "4000-4200 kcal/kg" (Grade A) or "3800-4000 kcal/kg" (Grade B/C)
-  * Wood Chip: "3800-4200 kcal/kg" (Grade A) or "3500-3800 kcal/kg" (Grade B/C)
-  * Palm Kernel Shell: "4200-4500 kcal/kg" (Grade A) or "3800-4200 kcal/kg" (Grade B/C)
-  * Sawdust: "3500-4000 kcal/kg"
-  * Plastic: "5000-8000 kcal/kg"
-  * Organic: "1500-2500 kcal/kg"
-  * Battery/Circuit/E-Waste/Metal: "0 kcal/kg (non-combustible)"
+LANGUAGE REQUIREMENT: The "reasoning" and "processingNotes" fields MUST be written entirely in ${userLanguage}. Use "We"/"Kami" perspective focusing on circular economy potential.
 
-Return a JSON object with these exact fields:
+MOISTURE & CALORIFIC VALUE (never N/A):
+- Estimate visually. Dry/light → "10-20%", Wet/dark → "30-45%"
+- Wood Pellet: 4000-4200 kcal/kg (A), 3800-4000 (B/C)
+- Palm Shell: 4200-4500 (A), 3800-4200 (B/C)
+- Plastic: 5000-8000, Organic: 1500-2500
+- Battery/Circuit/E-Waste/Metal: 0 kcal/kg
+
+Return ONLY valid JSON with these exact fields:
 {
-  "wasteType": "string (human-readable: 'Palm Kernel Shell', 'Wood Pellet', 'Wood Chip', 'Circuit Board', etc.)",
-  "wasteGrade": "PALM_SHELL | BIOMASS | PLASTIC | ORGANIC | BATTERY | CIRCUIT | E-WASTE | METAL | UNKNOWN",
-  "grade": "A | B | C",
-  "moisture": "string (e.g., '15-20%', '30-40%') - NEVER return N/A",
-  "calorificValue": "string (e.g., '4200 kcal/kg') - NEVER return N/A",
-  "contamination": { "detected": boolean, "type": "string or null" },
-  "confidence": number 0-100
-}
+  "perception": {
+    "wasteType": "human-readable name",
+    "wasteGrade": "PALM_SHELL|BIOMASS|PLASTIC|ORGANIC|BATTERY|CIRCUIT|E-WASTE|METAL|UNKNOWN",
+    "grade": "A|B|C",
+    "moisture": "e.g. 15-20%",
+    "calorificValue": "e.g. 4200 kcal/kg",
+    "contamination": { "detected": false, "type": null },
+    "confidence": 85
+  },
+  "decision": {
+    "robotCommand": "MOVE_TO_BIN_1|...|EMERGENCY_STOP",
+    "targetBin": "BIN_1|...|MANUAL_INSPECTION",
+    "wasteGrade": "BIOMASS|...",
+    "priority": "HIGH|MEDIUM|LOW|EMERGENCY",
+    "reasoning": "2-3 sentences in ${userLanguage} using We/Kami",
+    "processingNotes": "Special handling in ${userLanguage}",
+    "estimatedValue": "Premium|Standard|Low|Precious Metal Recovery|Toxic Prevention|Recyclable|Compostable"
+  }
+}`;
 
-Grading: A = clean/sorted/high value, B = some impurities/mixed, C = heavily mixed/damaged.
-Use "Kami" (We) perspective in all internal reasoning.
-
-Return ONLY valid JSON, no markdown.`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Stream the response using SSE
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: "Analyze this waste or material sample image and provide the quality assessment in JSON format.",
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`,
-                },
-              },
+              { type: "text", text: "Analyze this waste image. Return the unified perception + sorting decision JSON." },
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
             ],
           },
         ],
+        stream: true,
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "AI rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error("AI Gateway error:", aiResponse.status, errorText);
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "AI rate limit exceeded" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted" }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      // Try to parse a useful error message from the gateway
-      let gatewayMessage = `AI Gateway error: ${response.status}`;
-      try {
-        const parsed = JSON.parse(errorText);
-        if (parsed?.message) gatewayMessage = parsed.message;
-        else if (parsed?.error) gatewayMessage = parsed.error;
-      } catch { /* ignore */ }
-      throw new Error(gatewayMessage);
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
-    const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error("No response from AI");
+    // Collect the full streamed response, then parse and enrich
+    const reader = aiResponse.body!.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = "";
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+        let line = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line.startsWith("data: ")) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) fullContent += content;
+        } catch { /* partial */ }
+      }
     }
 
-    // Parse the AI response
-    let perception: PerceptionResult;
+    // Parse the unified response
+    const cleanJson = fullContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    let result;
     try {
-      // Clean up potential markdown formatting
-      const cleanJson = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      perception = JSON.parse(cleanJson);
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
-      // Fallback to default values if parsing fails
-      perception = {
-        wasteType: "Unknown",
-        grade: "C",
-        moisture: ">30%",
-        calorificValue: "<3,800 kcal/kg",
-        contamination: { detected: false, type: null },
-        confidence: 50,
-      };
+      result = JSON.parse(cleanJson);
+    } catch (e) {
+      console.error("Failed to parse AI response:", fullContent);
+      throw new Error("Failed to parse AI response");
     }
 
-    // Step 3: Generate Robot Command based on wasteGrade code
-    let robotCommand: RobotCommand;
-    
-    // Map wasteGrade to bin routing
-    const wasteGrade = (perception.wasteGrade || 'UNKNOWN').toUpperCase();
-    
-    const wasteRoutingMap: Record<string, { action: RobotCommand['action']; targetBin: number | null; priority: RobotCommand['priority'] }> = {
-      'BIOMASS': perception.grade === 'A' 
-        ? { action: 'MOVE_TO_BIN_1', targetBin: 1, priority: 'high' }
-        : perception.grade === 'B'
-        ? { action: 'MOVE_TO_BIN_2', targetBin: 2, priority: 'normal' }
-        : { action: 'REJECT_TO_CONVEYOR', targetBin: null, priority: 'normal' },
-      'PALM_SHELL': { action: 'MOVE_TO_BIN_2', targetBin: 2, priority: 'high' },
-      'PLASTIC': { action: 'MOVE_TO_BIN_3', targetBin: 3, priority: 'normal' },
-      'ORGANIC': { action: 'MOVE_TO_BIN_4', targetBin: 4, priority: 'normal' },
-      'BATTERY': { action: 'MOVE_TO_BIN_5', targetBin: 5, priority: 'high' },
-      'CIRCUIT': { action: 'MOVE_TO_BIN_6', targetBin: 6, priority: 'high' },
-      'E-WASTE': { action: 'MOVE_TO_BIN_7', targetBin: 7, priority: 'high' },
-      'METAL': { action: 'MOVE_TO_BIN_3', targetBin: 3, priority: 'normal' },
+    const perception = result.perception;
+    const decision = result.decision;
+
+    // Calculate carbon savings
+    const wasteGradeCode = decision?.wasteGrade || perception?.wasteGrade || 'default';
+    const typeFactors = CARBON_FACTORS[wasteGradeCode] || CARBON_FACTORS['default'];
+    const factor = typeFactors[perception?.grade] || typeFactors['B'];
+    const carbonSaved = parseFloat((1 * factor).toFixed(2));
+
+    // Generate robot command for legacy compatibility
+    const robotCommand = {
+      action: decision?.robotCommand || "REJECT_TO_CONVEYOR",
+      targetBin: decision?.targetBin ? parseInt(decision.targetBin.replace('BIN_', '')) || null : null,
+      priority: decision?.priority === 'EMERGENCY' ? 'emergency' : decision?.priority === 'HIGH' ? 'high' : 'normal',
+      timestamp: new Date().toISOString(),
+      perceptionData: perception,
     };
 
-    if (perception.contamination.detected) {
-      robotCommand = {
-        action: "EMERGENCY_STOP",
-        targetBin: null,
-        priority: "emergency",
-        timestamp: new Date().toISOString(),
-        perceptionData: perception,
-      };
-    } else {
-      const routing = wasteRoutingMap[wasteGrade] || { action: 'REJECT_TO_CONVEYOR' as const, targetBin: null, priority: 'normal' as const };
-      robotCommand = {
-        action: routing.action,
-        targetBin: routing.targetBin,
-        priority: routing.priority,
-        timestamp: new Date().toISOString(),
-        perceptionData: perception,
-      };
-    }
-
-    // Step 4: Attempt to sync with Vultr backend (optional, won't fail if unavailable)
+    // Vultr sync (non-blocking)
     let vultrSyncStatus = "not_configured";
-    let vultrSyncError = null;
     const VULTR_ENDPOINT = Deno.env.get("VULTR_ROBOT_API");
-    
     if (VULTR_ENDPOINT) {
       try {
-        console.log(`[VULTR] Attempting sync to: ${VULTR_ENDPOINT}`);
-        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
         const vultrResponse = await fetch(VULTR_ENDPOINT, {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(robotCommand),
           signal: controller.signal,
         });
-        
         clearTimeout(timeoutId);
-        
-        if (vultrResponse.ok) {
-          vultrSyncStatus = "synced";
-          console.log("[VULTR] Sync successful");
-        } else {
-          vultrSyncStatus = "sync_failed";
-          vultrSyncError = `HTTP ${vultrResponse.status}: ${vultrResponse.statusText}`;
-          console.error(`[VULTR] Sync failed: ${vultrSyncError}`);
-        }
-      } catch (vultrError) {
-        if (vultrError.name === 'AbortError') {
-          vultrSyncStatus = "timeout";
-          vultrSyncError = "Connection timed out after 10 seconds";
-        } else {
-          vultrSyncStatus = "sync_error";
-          vultrSyncError = vultrError instanceof Error ? vultrError.message : "Unknown error";
-        }
-        console.error(`[VULTR] Sync error: ${vultrSyncError}`);
+        vultrSyncStatus = vultrResponse.ok ? "synced" : "sync_failed";
+      } catch {
+        vultrSyncStatus = "sync_error";
       }
     }
 
-    // Log usage for audit (non-blocking)
-    console.log(`[AUDIT] User ${userId} scanned waste: ${perception.wasteType}, Grade: ${perception.grade}`);
+    console.log(`[AUDIT] User ${user.id} scanned: ${perception?.wasteType}, Grade: ${perception?.grade}, Carbon: ${carbonSaved}kg`);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        perception,
-        robotCommand,
-        vultrSyncStatus,
-        vultrSyncError,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      perception,
+      decision,
+      robotCommand,
+      carbonSaved,
+      vultrSyncStatus,
+      model: "google/gemini-2.5-flash",
+      timestamp: new Date().toISOString(),
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   } catch (error) {
     console.error("Perception pipeline error:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error occurred" 
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : "Unknown error",
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
