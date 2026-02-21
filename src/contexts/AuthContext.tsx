@@ -89,14 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'producer' | 'public') => {
+  const signUp = async (email: string, password: string, fullName: string, _role: 'producer' | 'public') => {
+    // Role is intentionally NOT sent to the server - it's always assigned as 'public'
+    // by the handle_new_user() trigger. Producer role must be assigned by an admin.
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
-          role: role,
         },
       },
     });
