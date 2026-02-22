@@ -124,6 +124,7 @@ export type Database = {
           grade: string | null
           id: number
           image_url: string | null
+          pickup_date: string | null
           producer_id: string | null
           status: string | null
           user_id: string
@@ -140,6 +141,7 @@ export type Database = {
           grade?: string | null
           id?: number
           image_url?: string | null
+          pickup_date?: string | null
           producer_id?: string | null
           status?: string | null
           user_id: string
@@ -156,6 +158,7 @@ export type Database = {
           grade?: string | null
           id?: number
           image_url?: string | null
+          pickup_date?: string | null
           producer_id?: string | null
           status?: string | null
           user_id?: string

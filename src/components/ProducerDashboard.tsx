@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale } from 'lucide-react';
 import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
+import PickupModal from './PickupModal';
 
 interface Transaction {
   id: number;
@@ -40,6 +41,7 @@ export default function ProducerDashboard() {
   const [carbonTrendData, setCarbonTrendData] = useState<{ date: string; label: string; carbon: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [pickupModal, setPickupModal] = useState<Transaction | null>(null);
 
   const T = {
     en: {
@@ -161,19 +163,24 @@ export default function ProducerDashboard() {
     }
   };
 
-  const handleApprove = async (transaction: Transaction) => {
+  const handleApprove = async (transaction: Transaction, pickupDate: string | null) => {
     setProcessingId(transaction.id);
     try {
       const pointsEarned = Math.floor(transaction.weight_kg * 10);
 
+      const updateData: Record<string, unknown> = {
+        status: 'awaiting_pickup',
+        producer_id: profile?.id,
+        approved_at: new Date().toISOString(),
+      };
+      if (pickupDate) {
+        updateData.pickup_date = pickupDate;
+      }
+
       const [updateResult] = await Promise.all([
         supabase
           .from('transactions')
-          .update({
-            status: 'approved',
-            producer_id: profile?.id,
-            approved_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', transaction.id),
 
         supabase.rpc('increment_user_points', {
@@ -186,15 +193,15 @@ export default function ProducerDashboard() {
 
       toast.success(
         language === 'en'
-          ? `Offer accepted! User earns ${pointsEarned} points.`
-          : `Penawaran diterima! User mendapat ${pointsEarned} poin.`,
+          ? `Offer accepted! Pickup scheduled. User earns ${pointsEarned} points.`
+          : `Penawaran diterima! Penjemputan dijadwalkan. User mendapat ${pointsEarned} poin.`,
         { icon: '✅' }
       );
+      setPickupModal(null);
       fetchDashboardData();
     } catch (error: unknown) {
-      const err = error as Error;
       if (import.meta.env.DEV) console.error('Error approving transaction:', error);
-      toast.error(err.message);
+      toast.error(language === 'en' ? 'Failed to accept offer. Please try again.' : 'Gagal menerima penawaran. Silakan coba lagi.');
     } finally {
       setProcessingId(null);
     }
@@ -219,9 +226,9 @@ export default function ProducerDashboard() {
       toast.success(language === 'en' ? 'Offer rejected.' : 'Penawaran ditolak.', { icon: '❌' });
       fetchDashboardData();
     } catch (error: unknown) {
-      const err = error as Error;
       if (import.meta.env.DEV) console.error('Error rejecting transaction:', error);
-      toast.error(err.message);
+      if (import.meta.env.DEV) console.error('Error rejecting transaction:', error);
+      toast.error(language === 'en' ? 'Failed to reject offer. Please try again.' : 'Gagal menolak penawaran. Silakan coba lagi.');
     } finally {
       setProcessingId(null);
     }
@@ -376,7 +383,7 @@ export default function ProducerDashboard() {
 
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleApprove(tx)}
+                      onClick={() => setPickupModal(tx)}
                       disabled={isProcessing}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -398,6 +405,16 @@ export default function ProducerDashboard() {
           </div>
         )}
       </div>
+
+      <PickupModal
+        open={!!pickupModal}
+        onClose={() => setPickupModal(null)}
+        onConfirm={(pickupDate) => pickupModal && handleApprove(pickupModal, pickupDate)}
+        loading={processingId !== null}
+        userName={pickupModal?.profiles?.full_name || 'Unknown'}
+        wasteType={pickupModal?.waste_type || '-'}
+        weightKg={pickupModal?.weight_kg || 0}
+      />
     </div>
   );
 }
