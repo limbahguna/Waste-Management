@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
 import { Clock, TrendingUp, TreePine, Camera, Leaf, Cpu, Package, Newspaper, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import LanguageSwitcher from './LanguageSwitcher';
 import HowItWorks from './HowItWorks';
 
@@ -86,6 +87,18 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           setTimeout(() => setCarbonAnimating(false), 2000);
         }
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` }, (payload) => {
+        const updated = payload.new as any;
+        if (updated?.status === 'awaiting_pickup') {
+          toast.success(
+            language === 'en'
+              ? '🚛 Your offer was accepted! Pickup is being scheduled.'
+              : '🚛 Penawaran Anda diterima! Penjemputan sedang dijadwalkan.',
+            { duration: 5000 }
+          );
+        }
+        fetchData();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(carbonChannel); };
@@ -134,8 +147,17 @@ export default function Home({ onNavigateToScan }: HomeProps) {
   }
 
   const getStatusBadge = (status: string | null) => {
-    if (status === 'approved') return { label: t('approved'), cls: 'bg-emerald-100 text-emerald-700' };
-    return { label: t('pending'), cls: 'bg-yellow-100 text-yellow-700' };
+    switch (status) {
+      case 'approved':
+      case 'completed':
+        return { label: language === 'en' ? 'Completed' : 'Selesai', cls: 'bg-emerald-100 text-emerald-700' };
+      case 'awaiting_pickup':
+        return { label: language === 'en' ? 'Awaiting Pickup' : 'Menunggu Jemput', cls: 'bg-blue-100 text-blue-700' };
+      case 'rejected':
+        return { label: language === 'en' ? 'Rejected' : 'Ditolak', cls: 'bg-red-100 text-red-700' };
+      default:
+        return { label: t('pending'), cls: 'bg-yellow-100 text-yellow-700' };
+    }
   };
 
   return (
