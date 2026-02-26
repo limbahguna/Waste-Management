@@ -31,6 +31,9 @@ export default function AIAnalysisModal({ open, onClose, technicalData, imageUrl
 
   if (!open) return null;
 
+  // Debug logging as requested
+  console.log('Selected Submission Data:', { technicalData, imageUrl, wasteType, grade });
+
   const T = {
     en: {
       title: 'AI Diagnostic Analysis',
