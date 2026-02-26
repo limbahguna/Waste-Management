@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw } from 'lucide-react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useScanContext } from '../contexts/ScanContext';
 import { toast } from 'sonner';
 import type { AIScanResult } from '../App';
@@ -31,6 +32,22 @@ interface GroqSortingDecision {
   wasteGrade?: string;
 }
 
+interface TechnicalData {
+  waste_type: string;
+  waste_category: string;
+  quality_grade: string | null;
+  moisture_content: string;
+  calorific_value: string;
+  robot_command: string;
+  target_bin: string;
+  priority: string;
+  ai_reasoning: string;
+  processing_notes: string;
+  estimated_value: string;
+  contamination: { detected: boolean; type: string | null };
+  confidence: number;
+}
+
 interface CarbonSyncResult {
   carbonSaved: number;
   synced: boolean;
@@ -49,21 +66,24 @@ const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 export default function AIScan({ onContinueToSupply }: AIScanProps) {
   const { t, language } = useLanguage();
   const { debugMode } = useDebug();
+  const { profile } = useAuth();
   const { scanState, setScanState, clearScanState } = useScanContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Restore from context or start fresh
+  const isProducer = profile?.role === 'producer';
+  
   const [selectedImage, setSelectedImage] = useState<string | null>(scanState.selectedImage);
   const [isProcessing, setIsProcessing] = useState(false);
   const [perception, setPerception] = useState<PerceptionResult | null>(scanState.perception);
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(scanState.decision);
+  const [technicalData, setTechnicalData] = useState<TechnicalData | null>(null);
+  const [ecoPartnerMessage, setEcoPartnerMessage] = useState<string | null>(null);
   const [carbonSyncResult, setCarbonSyncResult] = useState<CarbonSyncResult | null>(scanState.carbonSyncResult);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
   const [showDebug, setShowDebug] = useState(false);
   const [debugData, setDebugData] = useState<Record<string, unknown> | null>(scanState.debugData);
   const [copied, setCopied] = useState(false);
 
-  // Persist scan results to context whenever they change
   useEffect(() => {
     if (perception && selectedImage) {
       setScanState({
@@ -132,6 +152,8 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
         setSelectedImage(compressed);
         setPerception(null);
         setGroqDecision(null);
+        setTechnicalData(null);
+        setEcoPartnerMessage(null);
         setCarbonSyncResult(null);
         setActionLog([]);
       };
@@ -146,7 +168,6 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
     setActionLog([]);
 
     try {
-      // Step 1: Unified AI Analysis
       const analysisLogId = addLogEntry('perception', t('logAnalyzing'));
 
       const base64Data = selectedImage.split(',')[1];
@@ -178,11 +199,13 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
         throw new Error(data.error || 'Incomplete response from server');
       }
 
-      // Perception success
+      // Store new dual-output data
+      if (data.technical_data) setTechnicalData(data.technical_data);
+      if (data.eco_partner_message) setEcoPartnerMessage(data.eco_partner_message);
+
       updateLogEntry(analysisLogId, 'success');
       addLogEntry('perception', `${data.perception.wasteType} ${t('logDetected')}`, 'success');
 
-      // Decision
       const decisionLogId = addLogEntry('decision', t('logEvaluating'));
       await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -194,7 +217,6 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
         addLogEntry('decision', `Grade ${data.perception.grade} (${data.perception.confidence}% confidence)`, 'success');
       }
 
-      // AI Decision (from unified response)
       if (data.decision) {
         const groqLogId = addLogEntry('groq', '🧠 AI Decision received');
         updateLogEntry(groqLogId, 'success');
@@ -203,19 +225,16 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
         setGroqDecision(data.decision);
       }
 
-      // Carbon saved
       if (data.carbonSaved && data.carbonSaved > 0) {
         setCarbonSyncResult({ carbonSaved: data.carbonSaved, synced: data.vultrSyncStatus === 'synced' });
         addLogEntry('sync', `🌱 ${t('carbonSavedLabel')}: ${data.carbonSaved} kg CO₂`, 'success');
         toast.success(t('carbonSyncSuccess').replace('{amount}', data.carbonSaved.toString()), { icon: '🌱', duration: 5000 });
       }
 
-      // Vultr sync
       if (data.vultrSyncStatus === 'synced') {
         addLogEntry('sync', t('logVultrSynced'), 'success');
       }
 
-      // Robot command log
       const actionLogId = addLogEntry('action', t('logGeneratingCommand'));
       await new Promise((resolve) => setTimeout(resolve, 300));
       updateLogEntry(actionLogId, 'success');
@@ -229,6 +248,8 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
         vultrSyncStatus: data.vultrSyncStatus,
         carbonSaved: data.carbonSaved,
         decision: data.decision,
+        technical_data: data.technical_data,
+        eco_partner_message: data.eco_partner_message,
       });
 
     } catch (error) {
@@ -244,6 +265,8 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
     setSelectedImage(null);
     setPerception(null);
     setGroqDecision(null);
+    setTechnicalData(null);
+    setEcoPartnerMessage(null);
     setCarbonSyncResult(null);
     setActionLog([]);
     setDebugData(null);
@@ -282,6 +305,159 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
       default: return 'text-gray-600 bg-gray-100';
     }
   };
+
+  // Eco Partner simplified result view
+  const renderEcoPartnerResult = () => (
+    <div className="space-y-4 mb-6">
+      {/* Friendly Message Card */}
+      {ecoPartnerMessage && (
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl shadow-md p-6 border border-emerald-200">
+          <div className="flex items-start gap-3">
+            <div className="bg-emerald-500 p-2.5 rounded-full flex-shrink-0">
+              <MessageCircle className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-lg font-semibold text-emerald-800 leading-relaxed">{ecoPartnerMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Simple Result Card */}
+      <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
+          <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception!.grade)}`}>Grade {perception!.grade}</span>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2"><Scan className="w-5 h-5 text-emerald-600" /><span className="text-gray-700">{t('wasteCategory')}</span></div>
+            <span className="font-bold text-gray-800">{perception!.wasteType}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">{t('aiConfidence')}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${perception!.confidence}%` }}></div>
+              </div>
+              <span className="font-bold text-emerald-600">{perception!.confidence}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Carbon saved */}
+      {carbonSyncResult && (
+        <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl border border-green-200">
+          <div className="flex items-center gap-3">
+            <div className="bg-green-500 p-2 rounded-full"><CheckCircle2 className="w-5 h-5 text-white" /></div>
+            <div className="flex-1">
+              <p className="text-sm text-green-800 font-bold">{t('carbonSyncSuccessTitle')}</p>
+              <p className="text-lg font-bold text-green-700">🌱 {carbonSyncResult.carbonSaved} kg CO₂</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Producer/Admin full technical view
+  const renderProducerResult = () => (
+    <div className="space-y-4 mb-6">
+      <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
+          <div className="flex items-center gap-2">
+            {perception!.wasteGrade && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{perception!.wasteGrade}</span>
+            )}
+            <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception!.grade)}`}>Grade {perception!.grade}</span>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2"><Scan className="w-5 h-5 text-emerald-600" /><span className="text-gray-700">{t('wasteCategory')}</span></div>
+            <span className="font-bold text-gray-800">{perception!.wasteType}</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2"><Droplets className="w-5 h-5 text-blue-600" /><span className="text-gray-700">{t('moisture')}</span></div>
+            <span className="font-bold text-gray-800">{perception!.moisture}</span>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-600" /><span className="text-gray-700">{t('calorificValue')}</span></div>
+            <span className="font-bold text-gray-800">{perception!.calorificValue}</span>
+          </div>
+          {perception!.contamination?.detected && (
+            <div className="p-4 bg-red-50 rounded-xl border border-red-200">
+              <div className="flex items-center gap-2 mb-1"><AlertTriangle className="w-5 h-5 text-red-600" /><span className="font-bold text-red-800">{t('contaminationAlert')}</span></div>
+              <p className="text-red-700">{perception!.contamination.type} detected</p>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">{t('aiConfidence')}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${perception!.confidence}%` }}></div>
+              </div>
+              <span className="font-bold text-emerald-600">{perception!.confidence}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Decision Card - only for producers */}
+      {groqDecision && (
+        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-md p-6 border border-purple-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Brain className="w-6 h-6 text-purple-600" />
+            <h3 className="font-bold text-gray-800">{t('groqDecisionTitle')}</h3>
+            <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(groqDecision.priority)}`}>
+              {groqDecision.priority} {t('priorityLabel')}
+            </span>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+              <div className="flex items-center gap-2"><Bot className="w-5 h-5 text-purple-600" /><span className="text-gray-700">{t('robotCommandLabel')}</span></div>
+              <span className="font-bold text-purple-800">{groqDecision.robotCommand}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+              <div className="flex items-center gap-2"><Target className="w-5 h-5 text-purple-600" /><span className="text-gray-700">{t('targetBinLabel')}</span></div>
+              <span className="font-bold text-purple-800">{groqDecision.targetBin}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
+              <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-amber-600" /><span className="text-gray-700">{t('estimatedValueLabel')}</span></div>
+              <span className="font-bold text-amber-700">{groqDecision.estimatedValue}</span>
+            </div>
+            <div className="p-3 bg-purple-100/50 rounded-xl">
+              <p className="text-sm text-purple-800 font-medium mb-1">{t('aiReasoningLabel')}</p>
+              <p className="text-sm text-purple-700">{groqDecision.reasoning}</p>
+            </div>
+            {groqDecision.processingNotes && (
+              <div className="p-3 bg-indigo-100/50 rounded-xl">
+                <p className="text-sm text-indigo-800 font-medium mb-1">{t('processingNotesLabel')}</p>
+                <p className="text-sm text-indigo-700">{groqDecision.processingNotes}</p>
+              </div>
+            )}
+            {carbonSyncResult && (
+              <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-200">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500 p-2 rounded-full"><CheckCircle2 className="w-5 h-5 text-white" /></div>
+                  <div className="flex-1">
+                    <p className="text-sm text-green-800 font-bold">{t('carbonSyncSuccessTitle')}</p>
+                    <p className="text-lg font-bold text-green-700">🌱 {carbonSyncResult.carbonSaved} kg CO₂ {t('carbonSavedLabel')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="mt-4 pt-3 border-t border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600">
+            <Brain className="w-3 h-3" />
+            <span>{language === 'en' ? 'Powered by Gemini 2.5 Flash' : 'Didukung oleh Gemini 2.5 Flash'}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="pb-20 bg-gray-50 min-h-screen">
@@ -348,8 +524,8 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
           </div>
         </div>
 
-        {/* Analysis Progress Log */}
-        {actionLog.filter(e => e.type !== 'sync' && e.type !== 'error').length > 0 && (
+        {/* Analysis Progress Log - only show for producers */}
+        {isProducer && actionLog.filter(e => e.type !== 'sync' && e.type !== 'error').length > 0 && (
           <div className="bg-gray-900 rounded-2xl shadow-md p-4 mb-6 border border-gray-700">
             <h3 className="font-bold text-white mb-3 flex items-center gap-2">
               <Scan className="w-5 h-5 text-emerald-400" />
@@ -370,129 +546,38 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
           </div>
         )}
 
-        {/* Perception Results */}
+        {/* Perception Results - Role-based rendering */}
         {perception && (
-          <div className="space-y-4 mb-6">
-            <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
-                <div className="flex items-center gap-2">
-                  {perception.wasteGrade && (
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{perception.wasteGrade}</span>
-                  )}
-                  <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception.grade)}`}>Grade {perception.grade}</span>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-2"><Scan className="w-5 h-5 text-emerald-600" /><span className="text-gray-700">{t('wasteCategory')}</span></div>
-                  <span className="font-bold text-gray-800">{perception.wasteType}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-2"><Droplets className="w-5 h-5 text-blue-600" /><span className="text-gray-700">{t('moisture')}</span></div>
-                  <span className="font-bold text-gray-800">{perception.moisture}</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-600" /><span className="text-gray-700">{t('calorificValue')}</span></div>
-                  <span className="font-bold text-gray-800">{perception.calorificValue}</span>
-                </div>
-                {perception.contamination?.detected && (
-                  <div className="p-4 bg-red-50 rounded-xl border border-red-200">
-                    <div className="flex items-center gap-2 mb-1"><AlertTriangle className="w-5 h-5 text-red-600" /><span className="font-bold text-red-800">{t('contaminationAlert')}</span></div>
-                    <p className="text-red-700">{perception.contamination.type} detected</p>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{t('aiConfidence')}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${perception.confidence}%` }}></div>
-                    </div>
-                    <span className="font-bold text-emerald-600">{perception.confidence}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <>
+            {isProducer ? renderProducerResult() : renderEcoPartnerResult()}
+          </>
+        )}
 
-            {/* AI Decision Card */}
-            {groqDecision && (
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-md p-6 border border-purple-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Brain className="w-6 h-6 text-purple-600" />
-                  <h3 className="font-bold text-gray-800">{t('groqDecisionTitle')}</h3>
-                  <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(groqDecision.priority)}`}>
-                    {groqDecision.priority} {t('priorityLabel')}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                    <div className="flex items-center gap-2"><Bot className="w-5 h-5 text-purple-600" /><span className="text-gray-700">{t('robotCommandLabel')}</span></div>
-                    <span className="font-bold text-purple-800">{groqDecision.robotCommand}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                    <div className="flex items-center gap-2"><Target className="w-5 h-5 text-purple-600" /><span className="text-gray-700">{t('targetBinLabel')}</span></div>
-                    <span className="font-bold text-purple-800">{groqDecision.targetBin}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-                    <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-amber-600" /><span className="text-gray-700">{t('estimatedValueLabel')}</span></div>
-                    <span className="font-bold text-amber-700">{groqDecision.estimatedValue}</span>
-                  </div>
-                  <div className="p-3 bg-purple-100/50 rounded-xl">
-                    <p className="text-sm text-purple-800 font-medium mb-1">{t('aiReasoningLabel')}</p>
-                    <p className="text-sm text-purple-700">{groqDecision.reasoning}</p>
-                  </div>
-                  {groqDecision.processingNotes && (
-                    <div className="p-3 bg-indigo-100/50 rounded-xl">
-                      <p className="text-sm text-indigo-800 font-medium mb-1">{t('processingNotesLabel')}</p>
-                      <p className="text-sm text-indigo-700">{groqDecision.processingNotes}</p>
-                    </div>
-                  )}
-                  {carbonSyncResult && (
-                    <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-200">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-green-500 p-2 rounded-full"><CheckCircle2 className="w-5 h-5 text-white" /></div>
-                        <div className="flex-1">
-                          <p className="text-sm text-green-800 font-bold">{t('carbonSyncSuccessTitle')}</p>
-                          <p className="text-lg font-bold text-green-700">🌱 {carbonSyncResult.carbonSaved} kg CO₂ {t('carbonSavedLabel')}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 pt-3 border-t border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600">
-                  <Brain className="w-3 h-3" />
-                  <span>{language === 'en' ? 'Powered by Gemini 2.5 Flash' : 'Didukung oleh Gemini 2.5 Flash'}</span>
-                </div>
+        {/* Debug Panel - only for producers/debug mode */}
+        {debugMode && debugData && (
+          <div className="bg-gray-900 rounded-2xl shadow-md border border-gray-700 overflow-hidden mb-6">
+            <button onClick={() => setShowDebug(!showDebug)} className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-800 transition-colors">
+              <div className="flex items-center gap-2">
+                <Bug className="w-5 h-5 text-amber-400" />
+                <span className="font-bold text-white text-sm">Debug: API Response</span>
+                <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-300 font-mono">{(debugData.resolvedLanguage as string) || 'unknown'}</span>
               </div>
-            )}
-
-            {/* Debug Panel */}
-            {debugMode && debugData && (
-              <div className="bg-gray-900 rounded-2xl shadow-md border border-gray-700 overflow-hidden">
-                <button onClick={() => setShowDebug(!showDebug)} className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-800 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Bug className="w-5 h-5 text-amber-400" />
-                    <span className="font-bold text-white text-sm">Debug: API Response</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-300 font-mono">{(debugData.resolvedLanguage as string) || 'unknown'}</span>
-                  </div>
-                  {showDebug ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                </button>
-                {showDebug && (
-                  <div className="border-t border-gray-700 p-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Request Language</span><p className="text-emerald-400 font-mono font-bold">{debugData.requestLanguage as string}</p></div>
-                      <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Model</span><p className="text-blue-400 font-mono font-bold">{(debugData.model as string) || 'N/A'}</p></div>
-                      <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Vultr Sync</span><p className={`font-mono font-bold ${debugData.vultrSyncStatus === 'synced' ? 'text-emerald-400' : 'text-amber-400'}`}>{debugData.vultrSyncStatus as string}</p></div>
-                      <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Carbon Saved</span><p className="text-green-400 font-mono font-bold">{(debugData.carbonSaved as number) || 0} kg</p></div>
-                    </div>
-                    <div className="relative">
-                      <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(debugData, null, 2)); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors" title="Copy JSON">
-                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
-                      </button>
-                      <pre className="bg-gray-950 rounded-lg p-3 text-xs text-gray-300 font-mono overflow-x-auto max-h-64 overflow-y-auto">{JSON.stringify(debugData, null, 2)}</pre>
-                    </div>
-                  </div>
-                )}
+              {showDebug ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            </button>
+            {showDebug && (
+              <div className="border-t border-gray-700 p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Request Language</span><p className="text-emerald-400 font-mono font-bold">{debugData.requestLanguage as string}</p></div>
+                  <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Model</span><p className="text-blue-400 font-mono font-bold">{(debugData.model as string) || 'N/A'}</p></div>
+                  <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Vultr Sync</span><p className={`font-mono font-bold ${debugData.vultrSyncStatus === 'synced' ? 'text-emerald-400' : 'text-amber-400'}`}>{debugData.vultrSyncStatus as string}</p></div>
+                  <div className="bg-gray-800 rounded-lg p-2"><span className="text-gray-500">Carbon Saved</span><p className="text-green-400 font-mono font-bold">{(debugData.carbonSaved as number) || 0} kg</p></div>
+                </div>
+                <div className="relative">
+                  <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(debugData, null, 2)); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors" title="Copy JSON">
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+                  </button>
+                  <pre className="bg-gray-950 rounded-lg p-3 text-xs text-gray-300 font-mono overflow-x-auto max-h-64 overflow-y-auto">{JSON.stringify(debugData, null, 2)}</pre>
+                </div>
               </div>
             )}
           </div>
@@ -503,11 +588,13 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
           <div className="pb-6">
             <button
               onClick={() => {
-                onContinueToSupply({
+              onContinueToSupply({
                   wasteType: perception.wasteType,
                   grade: perception.grade,
                   confidenceScore: perception.confidence,
                   imageDataUrl: selectedImage || '',
+                  technicalData: technicalData ? JSON.parse(JSON.stringify(technicalData)) : undefined,
+                  ecoPartnerMessage: ecoPartnerMessage || undefined,
                 });
               }}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"

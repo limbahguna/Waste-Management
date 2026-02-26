@@ -121,12 +121,14 @@ export type Database = {
           confidence_score: number | null
           created_at: string | null
           description: string | null
+          eco_partner_message: string | null
           grade: string | null
           id: number
           image_url: string | null
           pickup_date: string | null
           producer_id: string | null
           status: string | null
+          technical_data: Json | null
           user_id: string
           waste_type: string | null
           weight_kg: number
@@ -138,12 +140,14 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string | null
           description?: string | null
+          eco_partner_message?: string | null
           grade?: string | null
           id?: number
           image_url?: string | null
           pickup_date?: string | null
           producer_id?: string | null
           status?: string | null
+          technical_data?: Json | null
           user_id: string
           waste_type?: string | null
           weight_kg: number
@@ -155,12 +159,14 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string | null
           description?: string | null
+          eco_partner_message?: string | null
           grade?: string | null
           id?: number
           image_url?: string | null
           pickup_date?: string | null
           producer_id?: string | null
           status?: string | null
+          technical_data?: Json | null
           user_id?: string
           waste_type?: string | null
           weight_kg?: number

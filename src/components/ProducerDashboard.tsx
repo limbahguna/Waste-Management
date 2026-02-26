@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
-import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale } from 'lucide-react';
+import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
 import PickupModal from './PickupModal';
+import AIAnalysisModal from './AIAnalysisModal';
 
 interface Transaction {
   id: number;
@@ -18,6 +19,8 @@ interface Transaction {
   address: string | null;
   status: string | null;
   created_at: string | null;
+  technical_data: Record<string, unknown> | null;
+  eco_partner_message: string | null;
   profiles: {
     full_name: string | null;
   } | null;
@@ -42,6 +45,7 @@ export default function ProducerDashboard() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [pickupModal, setPickupModal] = useState<Transaction | null>(null);
+  const [analysisModal, setAnalysisModal] = useState<Transaction | null>(null);
 
   const T = {
     en: {
@@ -63,6 +67,7 @@ export default function ProducerDashboard() {
       accessDeniedMsg: 'You do not have access to this page.',
       loadingData: 'Loading data...',
       rewardPoints: 'Reward Points',
+      viewAI: 'View AI Analysis',
     },
     id: {
       dashTitle: 'Dashboard Produsen',
@@ -83,6 +88,7 @@ export default function ProducerDashboard() {
       accessDeniedMsg: 'Anda tidak memiliki akses ke halaman ini.',
       loadingData: 'Memuat data...',
       rewardPoints: 'Reward Poin',
+      viewAI: 'Lihat Analisis AI',
     },
   };
   const t = T[language] || T.en;
@@ -103,7 +109,7 @@ export default function ProducerDashboard() {
           .from('transactions')
           .select(`
             id, user_id, waste_type, weight_kg, grade, confidence_score,
-            image_url, address, status, created_at,
+            image_url, address, status, created_at, technical_data, eco_partner_message,
             profiles!transactions_user_id_fkey ( full_name )
           `)
           .eq('status', 'pending')
@@ -140,7 +146,6 @@ export default function ProducerDashboard() {
         pendingTransactions: formattedTransactions.length,
       });
 
-      // Aggregate carbon data by day
       const dailyMap = new Map<string, number>();
       (carbonTrendRes.data || []).forEach((row: any) => {
         const day = new Date(row.created_at).toISOString().slice(0, 10);
@@ -226,7 +231,6 @@ export default function ProducerDashboard() {
       toast.success(language === 'en' ? 'Offer rejected.' : 'Penawaran ditolak.', { icon: '❌' });
       fetchDashboardData();
     } catch (error: unknown) {
-      if (import.meta.env.DEV) console.error('Error rejecting transaction:', error);
       if (import.meta.env.DEV) console.error('Error rejecting transaction:', error);
       toast.error(language === 'en' ? 'Failed to reject offer. Please try again.' : 'Gagal menolak penawaran. Silakan coba lagi.');
     } finally {
@@ -383,6 +387,13 @@ export default function ProducerDashboard() {
 
                   <div className="flex gap-2">
                     <button
+                      onClick={() => setAnalysisModal(tx)}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                      title={t.viewAI}
+                    >
+                      <Cpu className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() => setPickupModal(tx)}
                       disabled={isProcessing}
                       className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -414,6 +425,15 @@ export default function ProducerDashboard() {
         userName={pickupModal?.profiles?.full_name || 'Unknown'}
         wasteType={pickupModal?.waste_type || '-'}
         weightKg={pickupModal?.weight_kg || 0}
+      />
+
+      <AIAnalysisModal
+        open={!!analysisModal}
+        onClose={() => setAnalysisModal(null)}
+        technicalData={analysisModal?.technical_data as any}
+        imageUrl={analysisModal?.image_url || null}
+        wasteType={analysisModal?.waste_type || null}
+        grade={analysisModal?.grade || null}
       />
     </div>
   );

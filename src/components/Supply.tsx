@@ -138,6 +138,12 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
       if (isFromAI && aiScanResult) {
         insertData.grade = aiScanResult.grade;
         insertData.confidence_score = aiScanResult.confidenceScore;
+        if (aiScanResult.technicalData) {
+          insertData.technical_data = aiScanResult.technicalData;
+        }
+        if (aiScanResult.ecoPartnerMessage) {
+          insertData.eco_partner_message = aiScanResult.ecoPartnerMessage;
+        }
       }
 
       const { error } = await supabase.from('transactions').insert(insertData).select();
