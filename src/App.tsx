@@ -23,6 +23,8 @@ export interface AIScanResult {
   grade: string;
   confidenceScore: number;
   imageDataUrl: string;
+  technicalData?: Record<string, unknown>;
+  ecoPartnerMessage?: string;
 }
 
 type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
