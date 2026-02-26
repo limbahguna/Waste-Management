@@ -27,6 +27,7 @@ const CARBON_FACTORS: Record<string, Record<string, number>> = {
   'BIOMASS': { 'A': 1.5, 'B': 1.2, 'C': 0.8 },
   'PALM_SHELL': { 'A': 1.4, 'B': 1.2, 'C': 0.8 },
   'PLASTIC': { 'A': 1.1, 'B': 0.8, 'C': 0.5 },
+  'GLASS': { 'A': 0.9, 'B': 0.6, 'C': 0.3 },
   'ORGANIC': { 'A': 0.6, 'B': 0.4, 'C': 0.2 },
   'BATTERY': { 'A': 2.5, 'B': 2.0, 'C': 1.5 },
   'CIRCUIT': { 'A': 3.0, 'B': 2.2, 'C': 1.2 },
@@ -104,17 +105,24 @@ serve(async (req) => {
     const userLanguage = safeLanguage === 'en' ? 'English' : 'Indonesian';
 
     // UNIFIED PROMPT: Single model does perception + sorting + reasoning
-    const systemPrompt = `You are a Universal Waste Management Expert AI. Analyze the waste image and provide BOTH the perception data AND the sorting decision in a single response.
+    const systemPrompt = `You are the core visual analysis engine for Limbahguna, a Universal Waste Management Expert AI. Analyze the waste image and provide BOTH the perception data AND the sorting decision in a single response.
 
 WASTE CATEGORIES & CODES:
 1. PALM_SHELL - Palm Kernel Shell / Cangkang Sawit (curved, hard, dark brown/black)
 2. BIOMASS - Wood pellet (cylindrical), sawdust (fine powder), wood chip (flat, light brown)
-3. PLASTIC - Bottles, bags, containers, packaging
-4. ORGANIC - Food waste, garden waste, compostable
-5. BATTERY - Any battery type
-6. CIRCUIT - Circuit boards, PCBs, chips, wires
-7. E-WASTE - General electronics
-8. METAL - Metal scrap, cans, aluminum
+3. PLASTIC - Bottles, bags, containers, packaging, transparent cups with thin walls/creases/ridges
+4. GLASS - Thick-walled transparent containers with heavy light refraction, rigid structure, thick rims
+5. ORGANIC - Food waste, garden waste, compostable
+6. BATTERY - Any battery type
+7. CIRCUIT - Circuit boards, PCBs, chips, wires
+8. E-WASTE - General electronics
+9. METAL - Metal scrap, cans, aluminum
+
+CRITICAL - TRANSPARENT OBJECT CLASSIFICATION:
+When you see a transparent cup or container, DO NOT default to UNKNOWN or MANUAL_INSPECTION. Actively analyze:
+- PLASTIC indicators: thin walls, creases, dents, crumples, surface deformities, textured ridges for grip, thin rims, printed logos, appears lightweight. If deformed/bent/crushed → definitively PLASTIC.
+- GLASS indicators: thick walls, heavy light refraction/glare, solid rigid structure, thick rims, cannot be crumpled, perfect thick cylindrical shape with heavy reflection.
+- Only use MANUAL_INSPECTION if image is too blurry, extremely dark, or completely lacks defining features. Always prioritize logical deduction.
 
 SORTING RULES:
 - BIOMASS Grade A → MOVE_TO_BIN_1, HIGH priority
@@ -122,6 +130,7 @@ SORTING RULES:
 - BIOMASS Grade C → REJECT_TO_CONVEYOR, LOW priority
 - PALM_SHELL → MOVE_TO_BIN_2, HIGH priority
 - PLASTIC → MOVE_TO_BIN_3, MEDIUM priority
+- GLASS → MOVE_TO_BIN_8, MEDIUM priority
 - ORGANIC → MOVE_TO_BIN_4, MEDIUM priority
 - BATTERY → MOVE_TO_BIN_5, HIGH priority
 - CIRCUIT → MOVE_TO_BIN_6, HIGH priority
@@ -135,14 +144,14 @@ MOISTURE & CALORIFIC VALUE (never N/A):
 - Estimate visually. Dry/light → "10-20%", Wet/dark → "30-45%"
 - Wood Pellet: 4000-4200 kcal/kg (A), 3800-4000 (B/C)
 - Palm Shell: 4200-4500 (A), 3800-4200 (B/C)
-- Plastic: 5000-8000, Organic: 1500-2500
+- Plastic: 5000-8000, Organic: 1500-2500, Glass: 0 kcal/kg
 - Battery/Circuit/E-Waste/Metal: 0 kcal/kg
 
 Return ONLY valid JSON with these exact fields:
 {
   "perception": {
     "wasteType": "human-readable name",
-    "wasteGrade": "PALM_SHELL|BIOMASS|PLASTIC|ORGANIC|BATTERY|CIRCUIT|E-WASTE|METAL|UNKNOWN",
+    "wasteGrade": "PALM_SHELL|BIOMASS|PLASTIC|GLASS|ORGANIC|BATTERY|CIRCUIT|E-WASTE|METAL|UNKNOWN",
     "grade": "A|B|C",
     "moisture": "e.g. 15-20%",
     "calorificValue": "e.g. 4200 kcal/kg",
