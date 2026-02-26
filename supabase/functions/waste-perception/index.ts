@@ -250,15 +250,49 @@ Return ONLY valid JSON. No markdown, no code blocks, just the JSON object.`;
       }
     }
 
-    // Parse the unified response
-    const cleanJson = fullContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    // Robust JSON extraction - strip markdown code blocks and find JSON boundaries
+    function extractJsonFromResponse(response: string): unknown {
+      let cleaned = response
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .trim();
+
+      const jsonStart = cleaned.search(/[\{\[]/);
+      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === '[' ? ']' : '}');
+
+      if (jsonStart === -1 || jsonEnd === -1) {
+        console.error("No JSON object found in response:", cleaned.substring(0, 200));
+        throw new Error("No JSON object found in response");
+      }
+
+      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+      try {
+        return JSON.parse(cleaned);
+      } catch (_e) {
+        console.error("JSON parse failed, attempting repair...");
+        cleaned = cleaned
+          .replace(/,\s*}/g, "}")
+          .replace(/,\s*]/g, "]")
+          .replace(/[\x00-\x1F\x7F]/g, "");
+        try {
+          return JSON.parse(cleaned);
+        } catch (repairError) {
+          console.error("Failed to parse JSON even after repair:", repairError, "Raw:", cleaned.substring(0, 300));
+          throw new Error("Failed to parse AI response after repair");
+        }
+      }
+    }
+
     let result;
     try {
-      result = JSON.parse(cleanJson);
+      result = extractJsonFromResponse(fullContent) as Record<string, unknown>;
     } catch (e) {
-      console.error("Failed to parse AI response:", fullContent);
-      throw new Error("Failed to parse AI response");
+      console.error("Full AI response that failed parsing:", fullContent.substring(0, 500));
+      throw e;
     }
+
+    console.log("[DEBUG] Parsed technical_data keys:", result.technical_data ? Object.keys(result.technical_data as Record<string, unknown>) : "MISSING");
 
     const technicalData = result.technical_data;
     const ecoPartnerMessage = result.eco_partner_message;
