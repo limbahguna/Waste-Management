@@ -125,6 +125,8 @@ export type Database = {
           grade: string | null
           id: number
           image_url: string | null
+          latitude: number | null
+          longitude: number | null
           pickup_date: string | null
           producer_id: string | null
           status: string | null
@@ -144,6 +146,8 @@ export type Database = {
           grade?: string | null
           id?: number
           image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
           pickup_date?: string | null
           producer_id?: string | null
           status?: string | null
@@ -163,6 +167,8 @@ export type Database = {
           grade?: string | null
           id?: number
           image_url?: string | null
+          latitude?: number | null
+          longitude?: number | null
           pickup_date?: string | null
           producer_id?: string | null
           status?: string | null

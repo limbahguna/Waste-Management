@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
 import PickupModal from './PickupModal';
 import AIAnalysisModal from './AIAnalysisModal';
+const WasteMap = lazy(() => import('./WasteMap'));
 
 interface Transaction {
   id: number;
@@ -21,6 +22,8 @@ interface Transaction {
   created_at: string | null;
   technical_data: Record<string, unknown> | null;
   eco_partner_message: string | null;
+  latitude: number | null;
+  longitude: number | null;
   profiles: {
     full_name: string | null;
   } | null;
@@ -110,6 +113,7 @@ export default function ProducerDashboard() {
           .select(`
             id, user_id, waste_type, weight_kg, grade, confidence_score,
             image_url, address, status, created_at, technical_data, eco_partner_message,
+            latitude, longitude,
             profiles!transactions_user_id_fkey ( full_name )
           `)
           .eq('status', 'pending')
@@ -302,6 +306,22 @@ export default function ProducerDashboard() {
         </div>
 
         <CarbonTrendChart data={carbonTrendData} />
+
+        {/* Geospatial Waste Map */}
+        <Suspense fallback={<div className="bg-white rounded-2xl p-8 text-center shadow-md mb-6"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div></div>}>
+          <WasteMap
+            markers={transactions.map(tx => ({
+              id: tx.id,
+              latitude: tx.latitude ?? 0,
+              longitude: tx.longitude ?? 0,
+              waste_type: tx.waste_type,
+              grade: tx.grade,
+              weight_kg: tx.weight_kg,
+              image_url: tx.image_url,
+            }))}
+            language={language}
+          />
+        </Suspense>
 
         <div className="mb-4">
           <h2 className="text-lg font-bold text-gray-800">{t.incomingOffers}</h2>
