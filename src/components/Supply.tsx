@@ -356,12 +356,14 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
                   </div>
                 ) : (
                   <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
-                    />
+                    <label className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl cursor-pointer active:scale-[0.99] transition-transform">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
+                      />
+                    </label>
                     {photoPreview && (
                       <div className="mt-3">
                         <p className="text-xs text-gray-500 mb-2">Preview:</p>
