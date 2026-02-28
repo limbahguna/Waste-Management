@@ -83,6 +83,30 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
     return new File([u8arr], filename, { type: mime });
   };
 
+  const [gpsLoading, setGpsLoading] = useState(false);
+
+  const getGpsLocation = (): Promise<{ latitude: number; longitude: number } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      setGpsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setGpsLoading(false);
+          resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        },
+        (err) => {
+          console.warn('GPS error:', err.message);
+          setGpsLoading(false);
+          resolve(null);
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -97,6 +121,9 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
     setErrors({});
 
     try {
+      // Capture GPS location
+      const gps = await getGpsLocation();
+
       const { data: currentUser, error: userError } = await supabase.auth.getUser();
       if (userError || !currentUser.user) {
         throw new Error('Session tidak valid. Silakan login ulang.');
@@ -133,6 +160,8 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
         address: address.trim(),
         image_url: imageUrl,
         status: 'pending',
+        latitude: gps?.latitude ?? null,
+        longitude: gps?.longitude ?? null,
       };
 
       if (isFromAI && aiScanResult) {
@@ -391,7 +420,7 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Sedang mengirim...
+                {gpsLoading ? 'Mengambil lokasi GPS...' : 'Sedang mengirim...'}
               </>
             ) : (
               t('sendOffer')
