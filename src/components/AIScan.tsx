@@ -253,8 +253,10 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
       });
 
     } catch (error) {
-      if (import.meta.env.DEV) console.error('Processing error:', error);
-      addLogEntry('error', error instanceof Error ? error.message : 'Processing failed', 'error');
+      console.error('Processing error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Processing failed';
+      addLogEntry('error', errorMsg, 'error');
+      toast.error(errorMsg, { icon: '❌', duration: 5000 });
     } finally {
       setIsProcessing(false);
     }
@@ -495,20 +497,35 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
               )}
             </div>
 
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+            <input
+              id="ai-scan-file-input"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
             
             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3">
               {!selectedImage ? (
-                <button onClick={() => fileInputRef.current?.click()} className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all">
+                <label
+                  htmlFor="ai-scan-file-input"
+                  className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all cursor-pointer active:scale-95"
+                  onTouchStart={() => fileInputRef.current?.click()}
+                >
                   <Upload className="w-5 h-5" />
                   {t('uploadBtn')}
-                </button>
+                </label>
               ) : !perception ? (
                 <>
-                  <button onClick={() => fileInputRef.current?.click()} className="px-6 py-3 rounded-full font-bold flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white shadow-lg transition-all">
+                  <label
+                    className="px-6 py-3 rounded-full font-bold flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white shadow-lg transition-all cursor-pointer active:scale-95"
+                    onTouchStart={() => fileInputRef.current?.click()}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <Upload className="w-5 h-5" />
                     {t('changeImage')}
-                  </button>
+                  </label>
                   <button onClick={processImage} disabled={isProcessing} className="px-8 py-3 rounded-full font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg transition-all disabled:opacity-50">
                     <Scan className="w-5 h-5" />
                     {t('analyzeBtn')}
