@@ -244,9 +244,9 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
           <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-xl mb-6 flex items-start gap-3">
             <Bot className="w-6 h-6 text-purple-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-purple-800 font-bold mb-1">Data dari AI Scan</p>
+              <p className="text-purple-800 font-bold mb-1">AI Scan Data</p>
               <p className="text-purple-700 text-sm">
-                Jenis limbah dan foto telah diisi otomatis dari hasil analisis AI. Lengkapi berat dan alamat penjemputan.
+                Waste type and photo are auto-filled based on AI analysis. Please provide the estimated weight and pickup address.
               </p>
             </div>
           </div>
@@ -344,7 +344,7 @@ export default function Supply({ aiScanResult, onSuccess }: SupplyProps) {
                   <div className="space-y-2">
                     <div className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl bg-purple-50 flex items-center gap-2 text-purple-700 text-sm">
                       <Camera className="w-4 h-4" />
-                      Foto dari AI Scan (terkunci)
+                      Photo from AI Scan (Locked)
                     </div>
                     {photoPreview && (
                       <img
