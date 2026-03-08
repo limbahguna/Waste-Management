@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
-import { Clock, TrendingUp, TreePine, Flame, Sprout, Wheat, Recycle, Loader2, ShoppingBag, Wallet } from 'lucide-react';
+import { Clock, TrendingUp, TreePine, Flame, Sprout, Wheat, Recycle, Loader2, Truck, Wallet, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import LanguageSwitcher from './LanguageSwitcher';
 import HowItWorks from './HowItWorks';
 
 interface HomeProps {
-  onNavigateToScan?: () => void;
+  onNavigateToPickup?: () => void;
 }
 
 interface UserStats {
@@ -39,7 +39,7 @@ const homeT: Record<string, Record<string, string>> = {
     animalFeedDesc: 'Grain byproducts, bran, dried pulp, silage',
     ecoMaterials: 'Eco-Materials',
     ecoMaterialsDesc: 'Bioboard, fiber insulation, natural packaging',
-    marketPrices: 'Market Prices',
+    trackPickup: 'Track Pickup',
     myWallet: 'My Wallet',
     loading: 'Loading...',
   },
@@ -55,7 +55,7 @@ const homeT: Record<string, Record<string, string>> = {
     animalFeedDesc: 'Hasil samping biji-bijian, dedak, ampas kering, silase',
     ecoMaterials: 'Eko-Material',
     ecoMaterialsDesc: 'Papan bio, insulasi serat, kemasan alami',
-    marketPrices: 'Harga Pasar',
+    trackPickup: 'Lacak Penjemputan',
     myWallet: 'Dompet Saya',
     loading: 'Memuat...',
   },
@@ -68,7 +68,7 @@ const materialCards = [
   { key: 'ecoMaterials', icon: Recycle, color: 'bg-teal-100 text-teal-600' },
 ];
 
-export default function Home({ onNavigateToScan }: HomeProps) {
+export default function Home({ onNavigateToPickup }: HomeProps) {
   const { user, profile } = useAuth();
   const { t, language } = useLanguage();
   const ht = homeT[language] || homeT.en;
@@ -216,9 +216,9 @@ export default function Home({ onNavigateToScan }: HomeProps) {
 
         {/* Quick Action Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => onNavigateToScan && onNavigateToScan()} className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
-            <div className="bg-emerald-100 p-2 rounded-full"><ShoppingBag className="w-5 h-5 text-emerald-600" /></div>
-            <span className="text-sm">{ht.marketPrices}</span>
+          <button onClick={() => onNavigateToPickup?.()}  className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+            <div className="bg-emerald-100 p-2 rounded-full"><Truck className="w-5 h-5 text-emerald-600" /></div>
+            <span className="text-sm">{ht.trackPickup}</span>
           </button>
           <button className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
             <div className="bg-amber-100 p-2 rounded-full"><Wallet className="w-5 h-5 text-amber-600" /></div>
@@ -234,7 +234,7 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </h2>
           {recentTransactions.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 text-sm">{ht.noActivity}</p>
             </div>
           ) : (

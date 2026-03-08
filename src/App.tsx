@@ -16,6 +16,7 @@ import BottomNav from './components/BottomNav';
 import ManageProducts from './pages/ManageProducts';
 import AIScan from './components/AIScan';
 import RobotCommandCenter from './components/RobotCommandCenter';
+import PickupStatus from './components/PickupStatus';
 import { Toaster } from 'sonner';
 
 export interface AIScanResult {
@@ -27,7 +28,7 @@ export interface AIScanResult {
   ecoPartnerMessage?: string;
 }
 
-type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
+type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot' | 'pickup';
 
 // Navigation history stack for back button support
 
@@ -114,7 +115,7 @@ function AppContent() {
       case 'home':
         return profile?.role === 'producer'
           ? <ProducerDashboard />
-          : <Home onNavigateToScan={() => handleNavigate('scan')} />;
+          : <Home onNavigateToPickup={() => handleNavigate('pickup')} />;
       case 'marketplace':
         return productsLoading ? (
           <div className="flex items-center justify-center min-h-screen">
@@ -137,6 +138,8 @@ function AppContent() {
         return <AIScan onContinueToSupply={handleContinueToSupply} />;
       case 'robot':
         return <RobotCommandCenter />;
+      case 'pickup':
+        return <PickupStatus onBack={() => handleNavigate('home')} />;
       default:
         return <Home />;
     }
