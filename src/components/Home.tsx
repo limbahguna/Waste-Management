@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
-import { Clock, TrendingUp, TreePine, Flame, Sprout, Wheat, Recycle, Loader2, Truck, Wallet } from 'lucide-react';
+import { Clock, TrendingUp, TreePine, Flame, Sprout, Wheat, Recycle, Loader2, Truck, Wallet, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import LanguageSwitcher from './LanguageSwitcher';
 import HowItWorks from './HowItWorks';
