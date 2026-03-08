@@ -56,7 +56,7 @@ const homeT: Record<string, Record<string, string>> = {
     animalFeedDesc: 'Hasil samping biji-bijian, dedak, ampas kering, silase',
     ecoMaterials: 'Eko-Material',
     ecoMaterialsDesc: 'Papan bio, insulasi serat, kemasan alami',
-    marketPrices: 'Harga Pasar',
+    trackPickup: 'Lacak Penjemputan',
     myWallet: 'Dompet Saya',
     loading: 'Memuat...',
   },
