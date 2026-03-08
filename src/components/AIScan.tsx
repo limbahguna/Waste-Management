@@ -755,7 +755,18 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
                     status: 'pending',
                     carbon_saved: carbonSyncResult?.carbonSaved || null,
                     eco_partner_message: ecoPartnerMessage || null,
-                    technical_data: debugData || null,
+                    technical_data: technicalData ? {
+                      waste_type: technicalData.waste_type,
+                      waste_category: technicalData.waste_category,
+                      quality_grade: technicalData.quality_grade,
+                      moisture_content: technicalData.moisture_content,
+                      calorific_value: technicalData.calorific_value,
+                      ai_reasoning: technicalData.ai_reasoning,
+                      processing_notes: technicalData.processing_notes,
+                      estimated_value: technicalData.estimated_value,
+                      contamination: technicalData.contamination,
+                      confidence: technicalData.confidence,
+                    } : null,
                   });
 
                   if (error) throw error;
