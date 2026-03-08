@@ -600,19 +600,21 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
           </div>
         )}
 
-        {/* Continue to Supply button */}
-        {perception && onContinueToSupply && (
+        {/* Execute Robot Sorting button */}
+        {perception && (
           <div className="pb-6">
             <button
               onClick={() => {
-              onContinueToSupply({
-                  wasteType: perception.wasteType,
-                  grade: perception.grade,
-                  confidenceScore: perception.confidence,
-                  imageDataUrl: selectedImage || '',
-                  technicalData: technicalData ? JSON.parse(JSON.stringify(technicalData)) : undefined,
-                  ecoPartnerMessage: ecoPartnerMessage || undefined,
-                });
+                toast.success(
+                  language === 'en'
+                    ? '✅ Command successfully sent to sorting robot!'
+                    : '✅ Perintah berhasil dikirim ke robot sortir!',
+                  { duration: 4000 }
+                );
+                // Reset scan state after sending command
+                setTimeout(() => {
+                  handleReset();
+                }, 2000);
               }}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
             >
