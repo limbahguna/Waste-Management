@@ -9,7 +9,7 @@ import type { AIScanResult } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
 interface AIScanProps {
-  onContinueToSupply?: (result: AIScanResult) => void;
+  onContinueToSupply?: (result: AIScanResult) => void; // kept for backward compat, no longer used
 }
 
 interface PerceptionResult {
