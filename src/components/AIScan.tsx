@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabaseClient';
 
 interface AIScanProps {
   onContinueToSupply?: (result: AIScanResult) => void; // kept for backward compat, no longer used
+  onSendToProducer?: () => void;
 }
 
 interface PerceptionResult {
@@ -63,7 +64,7 @@ interface ActionLogEntry {
 
 const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
-export default function AIScan({ onContinueToSupply: _onContinueToSupply }: AIScanProps) {
+export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSendToProducer }: AIScanProps) {
   const { t, language } = useLanguage();
   const { debugMode } = useDebug();
   const { profile } = useAuth();
@@ -600,29 +601,30 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply }: AISc
           </div>
         )}
 
-        {/* Execute Robot Sorting button */}
-        {perception && (
-          <div className="pb-6">
-            <button
-              onClick={() => {
-                toast.success(
-                  language === 'en'
-                    ? '✅ Command successfully sent to sorting robot!'
-                    : '✅ Perintah berhasil dikirim ke robot sortir!',
-                  { duration: 4000 }
-                );
-                // Reset scan state after sending command
-                setTimeout(() => {
-                  resetScan();
-                }, 2000);
-              }}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
-            >
-              <Bot className="w-5 h-5" />
-              {language === 'en' ? 'Send to Producer' : 'Kirim ke Produsen'}
-            </button>
-          </div>
-        )}
+        {/* Send to Producer button */}
+         {perception && (
+           <div className="pb-6">
+             <button
+               onClick={() => {
+                 toast.success(
+                   language === 'en'
+                     ? 'Waste details and offer sent to Producer successfully!'
+                     : 'Detail limbah dan penawaran berhasil dikirim ke Produsen!',
+                   { duration: 4000 }
+                 );
+                 // Navigate back to home after sending
+                 setTimeout(() => {
+                   resetScan();
+                   onSendToProducer?.();
+                 }, 500);
+               }}
+               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
+             >
+               <ArrowRight className="w-5 h-5" />
+               {language === 'en' ? 'Send to Producer' : 'Kirim ke Produsen'}
+             </button>
+           </div>
+         )}
       </div>
     </div>
   );
