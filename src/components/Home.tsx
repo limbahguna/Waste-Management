@@ -8,7 +8,6 @@ import LanguageSwitcher from './LanguageSwitcher';
 import HowItWorks from './HowItWorks';
 
 interface HomeProps {
-  onNavigateToScan?: () => void;
   onNavigateToPickup?: () => void;
 }
 
