@@ -223,32 +223,9 @@ Return ONLY valid JSON. No markdown, no code blocks, just the JSON object.`;
       throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
-    // Collect the full streamed response
-    const reader = aiResponse.body!.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = "";
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-        let line = buffer.slice(0, newlineIndex);
-        buffer = buffer.slice(newlineIndex + 1);
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (!line.startsWith("data: ")) continue;
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) fullContent += content;
-        } catch { /* partial */ }
-      }
-    }
+    // Parse the non-streamed response
+    const aiJson = await aiResponse.json();
+    const fullContent = aiJson.choices?.[0]?.message?.content || "";
 
     // Robust JSON extraction - strip markdown code blocks and find JSON boundaries
     function extractJsonFromResponse(response: string): unknown {
