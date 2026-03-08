@@ -24,6 +24,8 @@ interface Transaction {
   eco_partner_message: string | null;
   latitude: number | null;
   longitude: number | null;
+  price_offer: number | null;
+  description: string | null;
   profiles: {
     full_name: string | null;
   } | null;
