@@ -195,6 +195,7 @@ Return ONLY valid JSON. No markdown, no code blocks, just the JSON object.`;
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
+        max_tokens: 4096,
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -205,7 +206,6 @@ Return ONLY valid JSON. No markdown, no code blocks, just the JSON object.`;
             ],
           },
         ],
-        stream: true,
       }),
     });
 
