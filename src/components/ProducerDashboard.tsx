@@ -115,7 +115,7 @@ export default function ProducerDashboard() {
           .select(`
             id, user_id, waste_type, weight_kg, grade, confidence_score,
             image_url, address, status, created_at, technical_data, eco_partner_message,
-            latitude, longitude,
+            latitude, longitude, price_offer, description,
             profiles!transactions_user_id_fkey ( full_name )
           `)
           .eq('status', 'pending')
