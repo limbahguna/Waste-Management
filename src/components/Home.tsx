@@ -216,7 +216,7 @@ export default function Home({ onNavigateToPickup }: HomeProps) {
 
         {/* Quick Action Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => onNavigateToPickup?.()}  className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+          <button onClick={() => onNavigateToPickup?.()}  className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3 mb-2">
             <div className="bg-emerald-100 p-2 rounded-full"><Truck className="w-5 h-5 text-emerald-600" /></div>
             <span className="text-sm">{ht.trackPickup}</span>
           </button>
