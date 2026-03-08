@@ -16,6 +16,7 @@ import BottomNav from './components/BottomNav';
 import ManageProducts from './pages/ManageProducts';
 import AIScan from './components/AIScan';
 import RobotCommandCenter from './components/RobotCommandCenter';
+import PickupStatus from './components/PickupStatus';
 import { Toaster } from 'sonner';
 
 export interface AIScanResult {
