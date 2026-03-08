@@ -62,10 +62,10 @@ const homeT: Record<string, Record<string, string>> = {
 };
 
 const materialCards = [
-  { key: 'agricultural', icon: Leaf, color: 'bg-emerald-100 text-emerald-600' },
-  { key: 'ewaste', icon: Cpu, color: 'bg-blue-100 text-blue-600' },
-  { key: 'plastics', icon: Package, color: 'bg-amber-100 text-amber-600' },
-  { key: 'paper', icon: Newspaper, color: 'bg-violet-100 text-violet-600' },
+  { key: 'biomass', icon: Flame, color: 'bg-orange-100 text-orange-600' },
+  { key: 'fertilizer', icon: Sprout, color: 'bg-emerald-100 text-emerald-600' },
+  { key: 'animalFeed', icon: Wheat, color: 'bg-amber-100 text-amber-600' },
+  { key: 'ecoMaterials', icon: Recycle, color: 'bg-teal-100 text-teal-600' },
 ];
 
 export default function Home({ onNavigateToScan }: HomeProps) {
