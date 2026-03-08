@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle } from 'lucide-react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle, MapPin, DollarSign, Package, FileText } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -84,6 +84,14 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
   const [showDebug, setShowDebug] = useState(false);
   const [debugData, setDebugData] = useState<Record<string, unknown> | null>(scanState.debugData);
   const [copied, setCopied] = useState(false);
+  
+  // Offer form state
+  const [priceOffer, setPriceOffer] = useState<string>('');
+  const [estimatedVolume, setEstimatedVolume] = useState<string>('');
+  const [offerNotes, setOfferNotes] = useState<string>('');
+  const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (perception && selectedImage) {
@@ -601,30 +609,179 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
           </div>
         )}
 
-        {/* Send to Producer button */}
-         {perception && (
-           <div className="pb-6">
-             <button
-               onClick={() => {
-                 toast.success(
-                   language === 'en'
-                     ? 'Waste details and offer sent to Producer successfully!'
-                     : 'Detail limbah dan penawaran berhasil dikirim ke Produsen!',
-                   { duration: 4000 }
-                 );
-                 // Navigate back to home after sending
-                 setTimeout(() => {
-                   resetScan();
-                   onSendToProducer?.();
-                 }, 500);
-               }}
-               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
-             >
-               <ArrowRight className="w-5 h-5" />
-               {language === 'en' ? 'Send to Producer' : 'Kirim ke Produsen'}
-             </button>
-           </div>
-         )}
+        {/* Make an Offer Card + Send Button - Eco Partner only */}
+        {perception && !isProducer && (
+          <div className="space-y-4 pb-6">
+            {/* Make an Offer Card */}
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+                {language === 'en' ? 'Make an Offer' : 'Buat Penawaran'}
+              </h3>
+              <div className="space-y-4">
+                {/* Price Offer */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {language === 'en' ? 'Price Offer (Rp / kg)' : 'Harga Penawaran (Rp / kg)'}
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Rp</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={priceOffer}
+                      onChange={(e) => setPriceOffer(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Estimated Volume */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {language === 'en' ? 'Estimated Volume (kg)' : 'Estimasi Volume (kg)'}
+                  </label>
+                  <div className="relative">
+                    <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="0"
+                      value={estimatedVolume}
+                      onChange={(e) => setEstimatedVolume(e.target.value)}
+                      placeholder="0"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Additional Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {language === 'en' ? 'Additional Notes' : 'Catatan Tambahan'}
+                  </label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                    <textarea
+                      value={offerNotes}
+                      onChange={(e) => setOfferNotes(e.target.value.slice(0, 500))}
+                      placeholder={language === 'en' ? 'e.g., Quality looks great, we will pick it up tomorrow' : 'cth., Kualitas bagus, kami akan jemput besok'}
+                      rows={3}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all text-gray-800 resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* GPS Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'en' ? 'Pickup Location' : 'Lokasi Penjemputan'}
+                  </label>
+                  {gpsLocation ? (
+                    <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <MapPin className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <span className="text-sm text-emerald-800 font-medium">
+                        📍 {language === 'en' ? 'Location acquired' : 'Lokasi diperoleh'}: {gpsLocation.lat.toFixed(5)}, {gpsLocation.lng.toFixed(5)}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setGpsLoading(true);
+                        setGpsError(null);
+                        if (!navigator.geolocation) {
+                          setGpsError(language === 'en' ? 'Geolocation not supported' : 'Geolokasi tidak didukung');
+                          setGpsLoading(false);
+                          return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setGpsLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                            setGpsLoading(false);
+                          },
+                          (err) => {
+                            setGpsError(language === 'en' ? `Failed: ${err.message}` : `Gagal: ${err.message}`);
+                            setGpsLoading(false);
+                          },
+                          { enableHighAccuracy: true, timeout: 10000 }
+                        );
+                      }}
+                      disabled={gpsLoading}
+                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-emerald-400 hover:text-emerald-600 transition-all disabled:opacity-50"
+                    >
+                      {gpsLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <MapPin className="w-5 h-5" />
+                      )}
+                      {gpsLoading
+                        ? (language === 'en' ? 'Fetching location...' : 'Mengambil lokasi...')
+                        : (language === 'en' ? '📍 Fetch Current Location' : '📍 Ambil Lokasi Saat Ini')}
+                    </button>
+                  )}
+                  {gpsError && <p className="text-xs text-red-500 mt-1">{gpsError}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Send to Producer Button */}
+            <button
+              onClick={() => {
+                if (!priceOffer || !estimatedVolume) {
+                  toast.error(
+                    language === 'en'
+                      ? 'Please fill in price offer and estimated volume.'
+                      : 'Harap isi harga penawaran dan estimasi volume.',
+                    { duration: 3000 }
+                  );
+                  return;
+                }
+                toast.success(
+                  language === 'en'
+                    ? `Offer sent! Rp ${Number(priceOffer).toLocaleString()}/kg for ${estimatedVolume} kg${gpsLocation ? ' (with location)' : ''}`
+                    : `Penawaran terkirim! Rp ${Number(priceOffer).toLocaleString()}/kg untuk ${estimatedVolume} kg${gpsLocation ? ' (dengan lokasi)' : ''}`,
+                  { duration: 4000 }
+                );
+                setTimeout(() => {
+                  resetScan();
+                  setPriceOffer('');
+                  setEstimatedVolume('');
+                  setOfferNotes('');
+                  setGpsLocation(null);
+                  onSendToProducer?.();
+                }, 500);
+              }}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
+            >
+              <ArrowRight className="w-5 h-5" />
+              {language === 'en' ? 'Send to Producer' : 'Kirim ke Produsen'}
+            </button>
+          </div>
+        )}
+
+        {/* Producer: direct button without offer form */}
+        {perception && isProducer && (
+          <div className="pb-6">
+            <button
+              onClick={() => {
+                toast.success(
+                  language === 'en'
+                    ? 'Waste details processed successfully!'
+                    : 'Detail limbah berhasil diproses!',
+                  { duration: 4000 }
+                );
+                setTimeout(() => {
+                  resetScan();
+                  onSendToProducer?.();
+                }, 500);
+              }}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
+            >
+              <ArrowRight className="w-5 h-5" />
+              {language === 'en' ? 'Process Waste' : 'Proses Limbah'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
