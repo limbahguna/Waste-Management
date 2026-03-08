@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle } from 'lucide-react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle, MapPin, DollarSign, Package, FileText } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
 import { useAuth } from '../contexts/AuthContext';
