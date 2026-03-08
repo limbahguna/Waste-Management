@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabaseClient';
 
 interface AIScanProps {
   onContinueToSupply?: (result: AIScanResult) => void; // kept for backward compat, no longer used
+  onSendToProducer?: () => void;
 }
 
 interface PerceptionResult {
