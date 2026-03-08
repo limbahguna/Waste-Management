@@ -115,7 +115,7 @@ function AppContent() {
       case 'home':
         return profile?.role === 'producer'
           ? <ProducerDashboard />
-          : <Home onNavigateToScan={() => handleNavigate('scan')} />;
+          : <Home onNavigateToPickup={() => handleNavigate('pickup')} />;
       case 'marketplace':
         return productsLoading ? (
           <div className="flex items-center justify-center min-h-screen">
