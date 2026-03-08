@@ -6,12 +6,13 @@ import { useDebug } from '../contexts/DebugContext';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Profile() {
-  const { user, profile, signOut, refreshProfile } = useAuth();
+  const { user, profile, session, loading, signOut, refreshProfile } = useAuth();
   const { t } = useLanguage();
   const { debugMode, setDebugMode, isAdmin } = useDebug();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const [editForm, setEditForm] = useState({
@@ -160,12 +161,67 @@ export default function Profile() {
     ? new Date(profile.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })
     : '';
 
-  if (!profile) {
+  useEffect(() => {
+    if (!loading && user && !profile) {
+      refreshProfile().catch((err: any) => {
+        setFetchError(err?.message || 'Failed to load profile');
+      });
+    }
+  }, [loading, user, profile]);
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+        <div className="text-center">
+          <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Please log in</h2>
+          <p className="text-gray-500 mb-6 text-sm">You need to be logged in to view your profile.</p>
+          <button
+            onClick={() => window.location.hash = ''}
+            className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+        <div className="text-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-700 mb-2">Error Loading Profile</h2>
+          <p className="text-red-500 text-sm mb-6 bg-red-50 p-3 rounded-xl">{fetchError}</p>
+          <button
+            onClick={() => { setFetchError(null); refreshProfile(); }}
+            className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
