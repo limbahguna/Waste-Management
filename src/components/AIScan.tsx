@@ -726,7 +726,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
 
             {/* Send to Producer Button */}
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!priceOffer || !estimatedVolume) {
                   toast.error(
                     language === 'en'
@@ -736,20 +736,48 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
                   );
                   return;
                 }
-                toast.success(
-                  language === 'en'
-                    ? `Offer sent! Rp ${Number(priceOffer).toLocaleString()}/kg for ${estimatedVolume} kg${gpsLocation ? ' (with location)' : ''}`
-                    : `Penawaran terkirim! Rp ${Number(priceOffer).toLocaleString()}/kg untuk ${estimatedVolume} kg${gpsLocation ? ' (dengan lokasi)' : ''}`,
-                  { duration: 4000 }
-                );
-                setTimeout(() => {
-                  resetScan();
-                  setPriceOffer('');
-                  setEstimatedVolume('');
-                  setOfferNotes('');
-                  setGpsLocation(null);
-                  onSendToProducer?.();
-                }, 500);
+
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) throw new Error('Not authenticated');
+
+                  const { error } = await supabase.from('transactions').insert({
+                    user_id: session.user.id,
+                    waste_type: perception!.wasteType,
+                    weight_kg: Number(estimatedVolume),
+                    grade: perception!.grade,
+                    confidence_score: perception!.confidence,
+                    image_url: selectedImage,
+                    description: offerNotes || null,
+                    price_offer: Number(priceOffer),
+                    latitude: gpsLocation?.lat || null,
+                    longitude: gpsLocation?.lng || null,
+                    status: 'pending',
+                    carbon_saved: carbonSyncResult?.carbonSaved || null,
+                    eco_partner_message: ecoPartnerMessage || null,
+                    technical_data: debugData || null,
+                  });
+
+                  if (error) throw error;
+
+                  toast.success(
+                    language === 'en'
+                      ? `Offer sent! Rp ${Number(priceOffer).toLocaleString()}/kg for ${estimatedVolume} kg`
+                      : `Penawaran terkirim! Rp ${Number(priceOffer).toLocaleString()}/kg untuk ${estimatedVolume} kg`,
+                    { duration: 4000 }
+                  );
+                  setTimeout(() => {
+                    resetScan();
+                    setPriceOffer('');
+                    setEstimatedVolume('');
+                    setOfferNotes('');
+                    setGpsLocation(null);
+                    onSendToProducer?.();
+                  }, 500);
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : 'Failed to send offer';
+                  toast.error(msg, { duration: 4000 });
+                }
               }}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
             >
