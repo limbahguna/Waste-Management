@@ -138,6 +138,8 @@ function AppContent() {
         return <AIScan onContinueToSupply={handleContinueToSupply} />;
       case 'robot':
         return <RobotCommandCenter />;
+      case 'pickup':
+        return <PickupStatus onBack={() => handleNavigate('home')} />;
       default:
         return <Home />;
     }
