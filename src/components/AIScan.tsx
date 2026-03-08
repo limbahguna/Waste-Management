@@ -619,7 +619,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply }: AISc
               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
             >
               <Bot className="w-5 h-5" />
-              {language === 'en' ? 'Execute Robot Sorting' : 'Eksekusi Sortir Robot'}
+              {language === 'en' ? 'Send to Producer' : 'Kirim ke Produsen'}
             </button>
           </div>
         )}
