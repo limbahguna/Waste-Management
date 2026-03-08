@@ -128,6 +128,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           pickup_date: string | null
+          price_offer: number | null
           producer_id: string | null
           status: string | null
           technical_data: Json | null
@@ -149,6 +150,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           pickup_date?: string | null
+          price_offer?: number | null
           producer_id?: string | null
           status?: string | null
           technical_data?: Json | null
@@ -170,6 +172,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           pickup_date?: string | null
+          price_offer?: number | null
           producer_id?: string | null
           status?: string | null
           technical_data?: Json | null
