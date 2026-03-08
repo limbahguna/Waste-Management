@@ -40,7 +40,7 @@ const homeT: Record<string, Record<string, string>> = {
     animalFeedDesc: 'Grain byproducts, bran, dried pulp, silage',
     ecoMaterials: 'Eco-Materials',
     ecoMaterialsDesc: 'Bioboard, fiber insulation, natural packaging',
-    marketPrices: 'Market Prices',
+    trackPickup: 'Track Pickup',
     myWallet: 'My Wallet',
     loading: 'Loading...',
   },
