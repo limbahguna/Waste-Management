@@ -381,15 +381,50 @@ export default function ProducerDashboard() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 flex items-center gap-2">
                         <Scale className="w-4 h-4" />
-                        {language === 'en' ? 'Weight' : 'Berat'}
+                        {language === 'en' ? 'Volume' : 'Volume'}
                       </span>
                       <span className="font-semibold text-gray-800">{tx.weight_kg} kg</span>
                     </div>
+                    {tx.price_offer != null && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4" />
+                          {language === 'en' ? 'Price Offer' : 'Harga Penawaran'}
+                        </span>
+                        <span className="font-bold text-emerald-600">Rp {tx.price_offer.toLocaleString()}/kg</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">{t.rewardPoints}</span>
                       <span className="font-bold text-green-600">{pointsWillEarn} poin</span>
                     </div>
                   </div>
+
+                  {/* Eco Partner Notes */}
+                  {tx.description && (
+                    <div className="bg-amber-50 border-l-4 border-amber-400 rounded p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <FileText className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-amber-800 font-semibold mb-1">{language === 'en' ? 'Partner Notes' : 'Catatan Mitra'}</p>
+                          <p className="text-sm text-amber-900">{tx.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* GPS Coordinates */}
+                  {(tx.latitude != null && tx.longitude != null && tx.latitude !== 0 && tx.longitude !== 0) && (
+                    <div className="bg-indigo-50 border-l-4 border-indigo-400 rounded p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <Navigation className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-indigo-800 font-semibold mb-1">{language === 'en' ? 'GPS Location' : 'Lokasi GPS'}</p>
+                          <p className="text-sm text-indigo-900 font-mono">{tx.latitude.toFixed(5)}, {tx.longitude.toFixed(5)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {tx.address && (
                     <div className="bg-blue-50 border-l-4 border-blue-400 rounded p-3 mb-4">
