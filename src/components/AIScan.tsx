@@ -63,7 +63,7 @@ interface ActionLogEntry {
 
 const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
-export default function AIScan({ onContinueToSupply }: AIScanProps) {
+export default function AIScan({ onContinueToSupply: _onContinueToSupply }: AIScanProps) {
   const { t, language } = useLanguage();
   const { debugMode } = useDebug();
   const { profile } = useAuth();
