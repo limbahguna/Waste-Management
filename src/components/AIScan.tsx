@@ -77,7 +77,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
   const [isProcessing, setIsProcessing] = useState(false);
   const [perception, setPerception] = useState<PerceptionResult | null>(scanState.perception);
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(scanState.decision);
-  const [_technicalData, setTechnicalData] = useState<TechnicalData | null>(null);
+  const [technicalData, setTechnicalData] = useState<TechnicalData | null>(null);
   const [ecoPartnerMessage, setEcoPartnerMessage] = useState<string | null>(null);
   const [carbonSyncResult, setCarbonSyncResult] = useState<CarbonSyncResult | null>(scanState.carbonSyncResult);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
