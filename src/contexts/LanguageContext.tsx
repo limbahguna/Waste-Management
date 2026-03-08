@@ -414,6 +414,7 @@ const translations = {
     navActivity: 'Home',
     navMarketplace: 'Market',
     navSupply: 'Supply',
+    navAIScan: 'AI Scan',
     navCalculator: 'Calculator',
     navProfile: 'Profile',
     navScan: 'Scan',
