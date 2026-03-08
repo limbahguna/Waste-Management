@@ -616,8 +616,8 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
               }}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
             >
-              <CheckCircle2 className="w-5 h-5" />
-              {language === 'en' ? 'Continue to Supply' : 'Lanjutkan Setor'}
+              <Bot className="w-5 h-5" />
+              {language === 'en' ? 'Execute Robot Sorting' : 'Eksekusi Sortir Robot'}
             </button>
           </div>
         )}

@@ -21,7 +21,7 @@ export default function BottomNav({ currentPage, onNavigate, userRole }: BottomN
       isCenter: false
     },
     { id: 'marketplace' as NavigationPage, labelKey: 'navMarketplace', icon: ShoppingBag, isCenter: false },
-    { id: 'scan' as NavigationPage, labelKey: 'navSupply', icon: UploadCloud, isCenter: true },
+    { id: 'scan' as NavigationPage, labelKey: 'navAIScan', icon: Camera, isCenter: true },
     { id: 'calculator' as NavigationPage, labelKey: 'navCalculator', icon: Calculator, isCenter: false },
     { id: 'profile' as NavigationPage, labelKey: 'navProfile', icon: User, isCenter: false }
   ];

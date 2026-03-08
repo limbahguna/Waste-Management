@@ -214,13 +214,17 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </div>
         </div>
 
-        {/* AI Scan Button */}
-        {onNavigateToScan && (
-          <button onClick={onNavigateToScan} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-4 mb-6">
-            <div className="bg-white/20 p-3 rounded-full"><Camera className="w-7 h-7 text-white" /></div>
-            <span className="text-xl">{t('aiScanBtn')}</span>
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button onClick={() => onNavigateToScan && onNavigateToScan()} className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+            <div className="bg-emerald-100 p-2 rounded-full"><ShoppingBag className="w-5 h-5 text-emerald-600" /></div>
+            <span className="text-sm">{ht.marketPrices}</span>
           </button>
-        )}
+          <button className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+            <div className="bg-amber-100 p-2 rounded-full"><Wallet className="w-5 h-5 text-amber-600" /></div>
+            <span className="text-sm">{ht.myWallet}</span>
+          </button>
+        </div>
 
         {/* Recent Activity */}
         <div className="mb-6">
