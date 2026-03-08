@@ -134,8 +134,8 @@ function AppContent() {
         return <ProducerDashboard />;
       case 'manage-products':
         return <ManageProducts />;
-      case 'scan':
-        return <AIScan onContinueToSupply={handleContinueToSupply} />;
+       case 'scan':
+         return <AIScan onContinueToSupply={handleContinueToSupply} onSendToProducer={() => handleNavigate('home')} />;
       case 'robot':
         return <RobotCommandCenter />;
       case 'pickup':
