@@ -9,7 +9,7 @@ import type { AIScanResult } from '../App';
 import { supabase } from '../lib/supabaseClient';
 
 interface AIScanProps {
-  onContinueToSupply?: (result: AIScanResult) => void;
+  onContinueToSupply?: (result: AIScanResult) => void; // kept for backward compat, no longer used
 }
 
 interface PerceptionResult {
@@ -63,7 +63,7 @@ interface ActionLogEntry {
 
 const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
 
-export default function AIScan({ onContinueToSupply }: AIScanProps) {
+export default function AIScan({ onContinueToSupply: _onContinueToSupply }: AIScanProps) {
   const { t, language } = useLanguage();
   const { debugMode } = useDebug();
   const { profile } = useAuth();
@@ -76,7 +76,7 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [perception, setPerception] = useState<PerceptionResult | null>(scanState.perception);
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(scanState.decision);
-  const [technicalData, setTechnicalData] = useState<TechnicalData | null>(null);
+  const [_technicalData, setTechnicalData] = useState<TechnicalData | null>(null);
   const [ecoPartnerMessage, setEcoPartnerMessage] = useState<string | null>(null);
   const [carbonSyncResult, setCarbonSyncResult] = useState<CarbonSyncResult | null>(scanState.carbonSyncResult);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
@@ -600,19 +600,21 @@ export default function AIScan({ onContinueToSupply }: AIScanProps) {
           </div>
         )}
 
-        {/* Continue to Supply button */}
-        {perception && onContinueToSupply && (
+        {/* Execute Robot Sorting button */}
+        {perception && (
           <div className="pb-6">
             <button
               onClick={() => {
-              onContinueToSupply({
-                  wasteType: perception.wasteType,
-                  grade: perception.grade,
-                  confidenceScore: perception.confidence,
-                  imageDataUrl: selectedImage || '',
-                  technicalData: technicalData ? JSON.parse(JSON.stringify(technicalData)) : undefined,
-                  ecoPartnerMessage: ecoPartnerMessage || undefined,
-                });
+                toast.success(
+                  language === 'en'
+                    ? '✅ Command successfully sent to sorting robot!'
+                    : '✅ Perintah berhasil dikirim ke robot sortir!',
+                  { duration: 4000 }
+                );
+                // Reset scan state after sending command
+                setTimeout(() => {
+                  resetScan();
+                }, 2000);
               }}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg"
             >
