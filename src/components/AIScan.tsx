@@ -84,6 +84,14 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
   const [showDebug, setShowDebug] = useState(false);
   const [debugData, setDebugData] = useState<Record<string, unknown> | null>(scanState.debugData);
   const [copied, setCopied] = useState(false);
+  
+  // Offer form state
+  const [priceOffer, setPriceOffer] = useState<string>('');
+  const [estimatedVolume, setEstimatedVolume] = useState<string>('');
+  const [offerNotes, setOfferNotes] = useState<string>('');
+  const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (perception && selectedImage) {
