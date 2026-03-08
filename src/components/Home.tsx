@@ -235,7 +235,7 @@ export default function Home({ onNavigateToScan, onNavigateToPickup }: HomeProps
           </h2>
           {recentTransactions.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 text-sm">{ht.noActivity}</p>
             </div>
           ) : (
