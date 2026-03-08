@@ -122,12 +122,14 @@ export default function ProducerDashboard() {
         supabase
           .from('transactions')
           .select('weight_kg, status')
-          .eq('status', 'approved'),
+          .eq('status', 'approved')
+          .eq('producer_id', profile!.id),
 
         supabase
           .from('transactions')
           .select('carbon_saved, created_at')
           .not('carbon_saved', 'is', null)
+          .eq('producer_id', profile!.id)
           .gte('created_at', thirtyDaysAgo.toISOString())
           .order('created_at', { ascending: true }),
       ]);
