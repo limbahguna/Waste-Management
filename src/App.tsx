@@ -28,7 +28,7 @@ export interface AIScanResult {
   ecoPartnerMessage?: string;
 }
 
-type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot';
+type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot' | 'pickup';
 
 // Navigation history stack for back button support
 
