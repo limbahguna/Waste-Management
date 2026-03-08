@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
-import { Clock, TrendingUp, TreePine, Camera, Leaf, Cpu, Package, Newspaper, Loader2 } from 'lucide-react';
+import { Clock, TrendingUp, TreePine, Flame, Sprout, Wheat, Recycle, Loader2, ShoppingBag, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import LanguageSwitcher from './LanguageSwitcher';
 import HowItWorks from './HowItWorks';
@@ -31,37 +31,41 @@ const homeT: Record<string, Record<string, string>> = {
     supportedMaterials: 'Supported Materials',
     recentActivity: 'Recent Activity',
     noActivity: 'No recent activity yet. Start your first scan!',
-    agricultural: 'Agricultural Waste',
-    agriculturalDesc: 'Rice husks, wood pellets, palm shell, sawdust',
-    ewaste: 'E-Waste',
-    ewasteDesc: 'Circuit boards, batteries, cables, electronics',
-    plastics: 'Plastics',
-    plasticsDesc: 'Bottles, containers, packaging, bags',
-    paper: 'Paper & Cardboard',
-    paperDesc: 'Office paper, corrugated boxes, newspapers',
+    biomass: 'Biomass Energy',
+    biomassDesc: 'Wood pellets, rice husks, palm shell, sawdust',
+    fertilizer: 'Organic Fertilizer',
+    fertilizerDesc: 'Compost, manure, crop residues, biochar',
+    animalFeed: 'Animal Feed',
+    animalFeedDesc: 'Grain byproducts, bran, dried pulp, silage',
+    ecoMaterials: 'Eco-Materials',
+    ecoMaterialsDesc: 'Bioboard, fiber insulation, natural packaging',
+    marketPrices: 'Market Prices',
+    myWallet: 'My Wallet',
     loading: 'Loading...',
   },
   id: {
     supportedMaterials: 'Limbah yang Diterima',
     recentActivity: 'Aktivitas Terakhir',
     noActivity: 'Belum ada aktivitas. Mulai scan pertama Anda!',
-    agricultural: 'Limbah Pertanian',
-    agriculturalDesc: 'Sekam padi, wood pellet, cangkang sawit, serbuk kayu',
-    ewaste: 'Limbah Elektronik',
-    ewasteDesc: 'Papan sirkuit, baterai, kabel, elektronik',
-    plastics: 'Plastik',
-    plasticsDesc: 'Botol, wadah, kemasan, tas plastik',
-    paper: 'Kertas & Kardus',
-    paperDesc: 'Kertas kantor, kardus bergelombang, koran',
+    biomass: 'Energi Biomassa',
+    biomassDesc: 'Wood pellet, sekam padi, cangkang sawit, serbuk kayu',
+    fertilizer: 'Pupuk Organik',
+    fertilizerDesc: 'Kompos, pupuk kandang, sisa tanaman, biochar',
+    animalFeed: 'Pakan Ternak',
+    animalFeedDesc: 'Hasil samping biji-bijian, dedak, ampas kering, silase',
+    ecoMaterials: 'Eko-Material',
+    ecoMaterialsDesc: 'Papan bio, insulasi serat, kemasan alami',
+    marketPrices: 'Harga Pasar',
+    myWallet: 'Dompet Saya',
     loading: 'Memuat...',
   },
 };
 
 const materialCards = [
-  { key: 'agricultural', icon: Leaf, color: 'bg-emerald-100 text-emerald-600' },
-  { key: 'ewaste', icon: Cpu, color: 'bg-blue-100 text-blue-600' },
-  { key: 'plastics', icon: Package, color: 'bg-amber-100 text-amber-600' },
-  { key: 'paper', icon: Newspaper, color: 'bg-violet-100 text-violet-600' },
+  { key: 'biomass', icon: Flame, color: 'bg-orange-100 text-orange-600' },
+  { key: 'fertilizer', icon: Sprout, color: 'bg-emerald-100 text-emerald-600' },
+  { key: 'animalFeed', icon: Wheat, color: 'bg-amber-100 text-amber-600' },
+  { key: 'ecoMaterials', icon: Recycle, color: 'bg-teal-100 text-teal-600' },
 ];
 
 export default function Home({ onNavigateToScan }: HomeProps) {
@@ -210,13 +214,17 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </div>
         </div>
 
-        {/* AI Scan Button */}
-        {onNavigateToScan && (
-          <button onClick={onNavigateToScan} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-4 mb-6">
-            <div className="bg-white/20 p-3 rounded-full"><Camera className="w-7 h-7 text-white" /></div>
-            <span className="text-xl">{t('aiScanBtn')}</span>
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button onClick={() => onNavigateToScan && onNavigateToScan()} className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+            <div className="bg-emerald-100 p-2 rounded-full"><ShoppingBag className="w-5 h-5 text-emerald-600" /></div>
+            <span className="text-sm">{ht.marketPrices}</span>
           </button>
-        )}
+          <button className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+            <div className="bg-amber-100 p-2 rounded-full"><Wallet className="w-5 h-5 text-amber-600" /></div>
+            <span className="text-sm">{ht.myWallet}</span>
+          </button>
+        </div>
 
         {/* Recent Activity */}
         <div className="mb-6">
@@ -226,7 +234,7 @@ export default function Home({ onNavigateToScan }: HomeProps) {
           </h2>
           {recentTransactions.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 text-sm">{ht.noActivity}</p>
             </div>
           ) : (
