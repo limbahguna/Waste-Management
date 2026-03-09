@@ -69,7 +69,7 @@ const materialCards = [
   { key: 'ecoMaterials', icon: Recycle, color: 'bg-teal-100 text-teal-600' },
 ];
 
-export default function Home({ onNavigateToPickup }: HomeProps) {
+export default function Home({ onNavigateToPickup, onNavigateToWallet }: HomeProps) {
   const { user, profile } = useAuth();
   const { t, language } = useLanguage();
   const ht = homeT[language] || homeT.en;
