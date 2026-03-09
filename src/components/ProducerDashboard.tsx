@@ -123,15 +123,16 @@ export default function ProducerDashboard() {
 
         supabase
           .from('transactions')
-          .select('weight_kg, status')
-          .eq('status', 'approved')
-          .eq('producer_id', profile!.id),
+          .select('weight_kg, carbon_saved, status')
+          .eq('producer_id', profile!.id)
+          .in('status', ['awaiting_pickup', 'completed', 'approved']),
 
         supabase
           .from('transactions')
           .select('carbon_saved, created_at')
           .not('carbon_saved', 'is', null)
           .eq('producer_id', profile!.id)
+          .in('status', ['awaiting_pickup', 'completed', 'approved'])
           .gte('created_at', thirtyDaysAgo.toISOString())
           .order('created_at', { ascending: true }),
       ]);
@@ -145,12 +146,12 @@ export default function ProducerDashboard() {
 
       setTransactions(formattedTransactions);
 
-      const totalWeight = approvedTransactionsRes.data?.reduce((sum, t) => sum + t.weight_kg, 0) || 0;
-      const carbonCredits = Math.round(totalWeight * 2.5);
+      const approvedTxs = approvedTransactionsRes.data || [];
+      const totalCarbonCredits = approvedTxs.reduce((sum, t) => sum + (t.carbon_saved || 0), 0);
 
       setStats({
-        totalTransactions: approvedTransactionsRes.data?.length || 0,
-        totalCarbonCredits: carbonCredits,
+        totalTransactions: approvedTxs.length,
+        totalCarbonCredits: Math.round(totalCarbonCredits),
         pendingTransactions: formattedTransactions.length,
       });
 
