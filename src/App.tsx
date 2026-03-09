@@ -29,7 +29,7 @@ export interface AIScanResult {
   ecoPartnerMessage?: string;
 }
 
-type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot' | 'pickup';
+type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot' | 'pickup' | 'wallet';
 
 // Navigation history stack for back button support
 
