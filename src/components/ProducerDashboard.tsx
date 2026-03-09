@@ -99,9 +99,24 @@ export default function ProducerDashboard() {
   const t = T[language] || T.en;
 
   useEffect(() => {
-    if (profile?.role === 'producer') {
-      fetchDashboardData();
-    }
+    if (profile?.role !== 'producer') return;
+
+    fetchDashboardData();
+
+    const channel = supabase
+      .channel('producer-transactions')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions' },
+        () => {
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profile]);
 
   const fetchDashboardData = async () => {
