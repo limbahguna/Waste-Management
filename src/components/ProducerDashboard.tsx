@@ -123,15 +123,16 @@ export default function ProducerDashboard() {
 
         supabase
           .from('transactions')
-          .select('weight_kg, status')
-          .eq('status', 'approved')
-          .eq('producer_id', profile!.id),
+          .select('weight_kg, carbon_saved, status')
+          .eq('producer_id', profile!.id)
+          .in('status', ['awaiting_pickup', 'completed', 'approved']),
 
         supabase
           .from('transactions')
           .select('carbon_saved, created_at')
           .not('carbon_saved', 'is', null)
           .eq('producer_id', profile!.id)
+          .in('status', ['awaiting_pickup', 'completed', 'approved'])
           .gte('created_at', thirtyDaysAgo.toISOString())
           .order('created_at', { ascending: true }),
       ]);
