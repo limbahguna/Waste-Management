@@ -146,12 +146,12 @@ export default function ProducerDashboard() {
 
       setTransactions(formattedTransactions);
 
-      const totalWeight = approvedTransactionsRes.data?.reduce((sum, t) => sum + t.weight_kg, 0) || 0;
-      const carbonCredits = Math.round(totalWeight * 2.5);
+      const approvedTxs = approvedTransactionsRes.data || [];
+      const totalCarbonCredits = approvedTxs.reduce((sum, t) => sum + (t.carbon_saved || 0), 0);
 
       setStats({
-        totalTransactions: approvedTransactionsRes.data?.length || 0,
-        totalCarbonCredits: carbonCredits,
+        totalTransactions: approvedTxs.length,
+        totalCarbonCredits: Math.round(totalCarbonCredits),
         pendingTransactions: formattedTransactions.length,
       });
 
