@@ -17,6 +17,7 @@ import ManageProducts from './pages/ManageProducts';
 import AIScan from './components/AIScan';
 import RobotCommandCenter from './components/RobotCommandCenter';
 import PickupStatus from './components/PickupStatus';
+import Wallet from './components/Wallet';
 import { Toaster } from 'sonner';
 
 export interface AIScanResult {
