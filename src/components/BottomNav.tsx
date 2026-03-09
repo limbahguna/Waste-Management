@@ -1,7 +1,7 @@
 import { ShoppingBag, Camera, User, Home, Calculator } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot' | 'pickup';
+type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profile' | 'producer' | 'manage-products' | 'scan' | 'robot' | 'pickup' | 'wallet';
 
 interface BottomNavProps {
   currentPage: NavigationPage;

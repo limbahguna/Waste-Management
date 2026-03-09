@@ -9,6 +9,7 @@ import HowItWorks from './HowItWorks';
 
 interface HomeProps {
   onNavigateToPickup?: () => void;
+  onNavigateToWallet?: () => void;
 }
 
 interface UserStats {
@@ -68,7 +69,7 @@ const materialCards = [
   { key: 'ecoMaterials', icon: Recycle, color: 'bg-teal-100 text-teal-600' },
 ];
 
-export default function Home({ onNavigateToPickup }: HomeProps) {
+export default function Home({ onNavigateToPickup, onNavigateToWallet }: HomeProps) {
   const { user, profile } = useAuth();
   const { t, language } = useLanguage();
   const ht = homeT[language] || homeT.en;
@@ -220,7 +221,7 @@ export default function Home({ onNavigateToPickup }: HomeProps) {
             <div className="bg-emerald-100 p-2 rounded-full"><Truck className="w-5 h-5 text-emerald-600" /></div>
             <span className="text-sm">{ht.trackPickup}</span>
           </button>
-          <button className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
+          <button onClick={() => onNavigateToWallet?.()} className="bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-md text-gray-800 font-semibold py-4 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-3">
             <div className="bg-amber-100 p-2 rounded-full"><Wallet className="w-5 h-5 text-amber-600" /></div>
             <span className="text-sm">{ht.myWallet}</span>
           </button>
