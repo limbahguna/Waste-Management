@@ -9,6 +9,7 @@ import HowItWorks from './HowItWorks';
 
 interface HomeProps {
   onNavigateToPickup?: () => void;
+  onNavigateToWallet?: () => void;
 }
 
 interface UserStats {
