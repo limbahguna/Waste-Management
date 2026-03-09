@@ -141,6 +141,8 @@ function AppContent() {
         return <RobotCommandCenter />;
       case 'pickup':
         return <PickupStatus onBack={() => handleNavigate('home')} />;
+      case 'wallet':
+        return <Wallet onBack={() => handleNavigate('home')} />;
       default:
         return <Home />;
     }
