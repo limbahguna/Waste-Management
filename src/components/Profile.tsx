@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Phone, MapPin, LogOut, Edit2, BadgeCheck, Headphones, Lock, Shield, Save, X, Bug } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+
 import { useAuth } from '../contexts/AuthContext';
 import { useDebug } from '../contexts/DebugContext';
 import { supabase } from '../lib/supabaseClient';
