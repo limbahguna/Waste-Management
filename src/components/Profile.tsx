@@ -420,7 +420,10 @@ export default function Profile() {
         <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
           <button
             onClick={() => {
-              window.open('https://wa.me/6287871812860?text=Halo%20Tim%20LimbahGuna%2C%20saya%20membutuhkan%20bantuan%20terkait%20aplikasi.', '_blank');
+              const waUrl = language === 'id'
+                ? 'https://api.whatsapp.com/send/?phone=628132002949&text=Halo+Tim+LimbahGuna%2C+saya+membutuhkan+bantuan+terkait+aplikasi.&type=phone_number&app_absent=0'
+                : 'https://api.whatsapp.com/send/?phone=628132002949&text=Hello+LimbahGuna+Team%2C+I+need+help+with+the+application.&type=phone_number&app_absent=0';
+              window.open(waUrl, '_blank');
             }}
             className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
           >
