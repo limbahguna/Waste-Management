@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabaseClient';
 
 export default function Profile() {
   const { user, profile, session, loading, signOut, refreshProfile } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { debugMode, setDebugMode, isAdmin } = useDebug();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
