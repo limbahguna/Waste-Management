@@ -1,8 +1,9 @@
-import { ArrowLeft, Phone, CheckCircle2, Circle, Truck, Package, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Phone, CheckCircle2, Circle, Truck, Package, Clock, AlertCircle, Send, CalendarClock, UserCheck } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 
 interface PickupStatusProps {
   onBack: () => void;
@@ -18,6 +19,7 @@ interface PickupTransaction {
   pickup_date: string | null;
   producer_id: string | null;
   address: string | null;
+  description: string | null;
 }
 
 interface ProducerProfile {
@@ -35,7 +37,8 @@ const steps = [
 function getActiveStep(status: string | null): number {
   switch (status) {
     case 'pending': return 0;
-    case 'awaiting_pickup': return 2;
+    case 'awaiting_pickup': return 1;
+    case 'truck_on_the_way': return 2;
     case 'in_progress': return 2;
     case 'completed': return 3;
     default: return 0;
@@ -44,61 +47,127 @@ function getActiveStep(status: string | null): number {
 
 export default function PickupStatus({ onBack }: PickupStatusProps) {
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile: userProfile } = useAuth();
   const [tx, setTx] = useState<PickupTransaction | null>(null);
   const [producer, setProducer] = useState<ProducerProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Dispatch form state
+  const [eta, setEta] = useState('');
+  const [driverName, setDriverName] = useState('');
+  const [dispatching, setDispatching] = useState(false);
+
   const t = (en: string, id: string) => language === 'en' ? en : id;
 
-  useEffect(() => {
+  const isEcoPartner = userProfile?.role === 'producer';
+
+  const fetchData = async () => {
     if (!user) { setLoading(false); return; }
 
-    (async () => {
-      // Fetch the most recent active transaction
-      const { data: txData } = await supabase
+    // For eco partners, fetch transactions assigned to them; for users, fetch their own
+    let query = supabase
+      .from('transactions')
+      .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
+      .in('status', ['awaiting_pickup', 'in_progress', 'pending', 'approved', 'truck_on_the_way'])
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (isEcoPartner) {
+      query = query.eq('producer_id', user.id);
+    } else {
+      query = query.eq('user_id', user.id);
+    }
+
+    const { data: txData } = await query.maybeSingle();
+
+    // Fallback: latest transaction
+    let transaction = txData;
+    if (!transaction) {
+      let fallbackQuery = supabase
         .from('transactions')
-        .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address')
-        .eq('user_id', user.id)
-        .in('status', ['awaiting_pickup', 'in_progress', 'pending', 'approved'])
+        .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
         .order('created_at', { ascending: false })
-        .limit(1)
+        .limit(1);
+
+      if (isEcoPartner) {
+        fallbackQuery = fallbackQuery.eq('producer_id', user.id);
+      } else {
+        fallbackQuery = fallbackQuery.eq('user_id', user.id);
+      }
+
+      const { data: fallback } = await fallbackQuery.maybeSingle();
+      transaction = fallback;
+    }
+
+    setTx(transaction);
+
+    // Fetch assigned producer/partner info
+    if (transaction?.producer_id) {
+      const { data: profileData } = await supabase
+        .from('profiles_public')
+        .select('full_name, phone')
+        .eq('id', transaction.producer_id)
         .maybeSingle();
+      setProducer(profileData as ProducerProfile | null);
+    }
 
-      // Fallback: if no active transaction, get the latest completed one
-      let transaction = txData;
-      if (!transaction) {
-        const { data: fallback } = await supabase
-          .from('transactions')
-          .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        transaction = fallback;
-      }
+    setLoading(false);
+  };
 
-      setTx(transaction);
-
-      // Fetch assigned producer/partner info
-      if (transaction?.producer_id) {
-        const { data: profileData } = await supabase
-          .from('profiles_public')
-          .select('full_name, phone')
-          .eq('id', transaction.producer_id)
-          .maybeSingle();
-        setProducer(profileData as ProducerProfile | null);
-      }
-
-      setLoading(false);
-    })();
+  useEffect(() => {
+    fetchData();
   }, [user]);
+
+  const handleDispatch = async () => {
+    if (!tx || !eta.trim()) {
+      toast.error(t('Please fill in the ETA field', 'Harap isi kolom estimasi waktu'));
+      return;
+    }
+
+    setDispatching(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          status: 'truck_on_the_way',
+          pickup_date: new Date().toISOString().split('T')[0],
+          description: [
+            tx.description || '',
+            `[ETA: ${eta.trim()}]`,
+            driverName.trim() ? `[Driver: ${driverName.trim()}]` : '',
+          ].filter(Boolean).join(' | '),
+        })
+        .eq('id', tx.id);
+
+      if (error) throw error;
+
+      toast.success(t('Truck dispatched successfully!', 'Truk berhasil dikirim!'));
+
+      // Refresh data to reflect changes
+      setTx(prev => prev ? { ...prev, status: 'truck_on_the_way', pickup_date: new Date().toISOString().split('T')[0] } : null);
+      if (user) {
+        setProducer(prev => ({
+          full_name: driverName.trim() || prev?.full_name || null,
+          phone: prev?.phone || null,
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(t('Failed to dispatch truck', 'Gagal mengirim truk'));
+    } finally {
+      setDispatching(false);
+    }
+  };
 
   const activeStep = getActiveStep(tx?.status ?? null);
 
   const etaText = tx?.pickup_date
     ? new Date(tx.pickup_date).toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long' })
     : t('Not yet scheduled', 'Belum dijadwalkan');
+
+  // Extract driver info from description if stored
+  const extractedDriver = tx?.description?.match(/\[Driver: (.+?)\]/)?.[1];
+  const extractedEta = tx?.description?.match(/\[ETA: (.+?)\]/)?.[1];
 
   if (loading) {
     return (
@@ -129,6 +198,8 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
       </div>
     );
   }
+
+  const showDispatchForm = isEcoPartner && (tx.status === 'awaiting_pickup' || tx.status === 'approved');
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
@@ -179,6 +250,54 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
           </div>
         </div>
 
+        {/* Eco Partner Dispatch Form */}
+        {showDispatchForm && (
+          <div className="bg-amber-50 rounded-2xl p-5 shadow-sm border border-amber-200">
+            <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Send className="w-4 h-4 text-amber-600" />
+              {t('Dispatch Truck & Set Schedule', 'Kirim Truk & Atur Jadwal')}
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block flex items-center gap-1.5">
+                  <CalendarClock className="w-3.5 h-3.5" />
+                  {t('Estimated Arrival (ETA)', 'Estimasi Kedatangan (ETA)')} *
+                </label>
+                <input
+                  type="text"
+                  value={eta}
+                  onChange={e => setEta(e.target.value)}
+                  placeholder={t('e.g. Today 14:00 - 15:00', 'cth. Hari ini 14:00 - 15:00')}
+                  className="w-full border border-amber-300 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-400"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  {t('Driver Name / Contact', 'Nama Pengemudi / Kontak')}
+                </label>
+                <input
+                  type="text"
+                  value={driverName}
+                  onChange={e => setDriverName(e.target.value)}
+                  placeholder={t('e.g. Budi - 0812xxxx', 'cth. Budi - 0812xxxx')}
+                  className="w-full border border-amber-300 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent placeholder:text-gray-400"
+                />
+              </div>
+              <button
+                onClick={handleDispatch}
+                disabled={dispatching}
+                className="w-full mt-2 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                <Truck className="w-4 h-4" />
+                {dispatching
+                  ? t('Dispatching...', 'Mengirim...')
+                  : t('Confirm & Dispatch Truck', 'Konfirmasi & Kirim Truk')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ETA Card */}
         <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
           <div className="flex items-center gap-3 mb-2">
@@ -187,7 +306,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
             </div>
             <div>
               <p className="text-xs text-emerald-600 font-semibold">{t('Scheduled Pickup', 'Jadwal Penjemputan')}</p>
-              <p className="text-lg font-bold text-emerald-800">{etaText}</p>
+              <p className="text-lg font-bold text-emerald-800">{extractedEta || etaText}</p>
             </div>
           </div>
         </div>
@@ -205,6 +324,12 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
                 {producer?.full_name || t('Waiting for assignment', 'Menunggu penugasan')}
               </span>
             </div>
+            {extractedDriver && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">{t('Driver', 'Pengemudi')}</span>
+                <span className="font-semibold text-gray-800">{extractedDriver}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">{t('Contact', 'Kontak')}</span>
               <span className="font-semibold text-gray-800">
@@ -220,7 +345,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
                 {t('Call Partner', 'Hubungi Mitra')}
               </a>
             )}
-            {!producer && (
+            {!producer && !extractedDriver && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
                 <p className="text-xs text-amber-700">{t('A recovery partner will be assigned soon', 'Mitra pemulihan akan segera ditugaskan')}</p>
               </div>
