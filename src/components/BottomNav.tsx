@@ -6,7 +6,7 @@ type NavigationPage = 'home' | 'marketplace' | 'supply' | 'calculator' | 'profil
 interface BottomNavProps {
   currentPage: NavigationPage;
   onNavigate: (page: NavigationPage) => void;
-  userRole: 'producer' | 'public';
+  userRole: string;
 }
 
 export default function BottomNav({ currentPage, onNavigate, userRole }: BottomNavProps) {
