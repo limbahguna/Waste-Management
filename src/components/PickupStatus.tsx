@@ -85,7 +85,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     if (!transaction) {
       let fallbackQuery = supabase
         .from('transactions')
-        .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address')
+        .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
         .order('created_at', { ascending: false })
         .limit(1);
 
