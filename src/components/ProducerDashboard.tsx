@@ -289,7 +289,10 @@ export default function ProducerDashboard() {
   return (
     <div className="pb-20 bg-gray-50 min-h-screen">
       <div className="bg-gradient-to-br from-green-400 to-green-600 text-white p-6 rounded-b-3xl shadow-lg">
-        <h1 className="text-2xl font-bold mb-2">{t.dashTitle}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold">{t.dashTitle}</h1>
+          <LanguageSwitcher />
+        </div>
         <p className="text-sm text-green-50">{t.dashSub}</p>
       </div>
 
