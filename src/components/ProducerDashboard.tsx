@@ -436,7 +436,15 @@ export default function ProducerDashboard() {
                         <Navigation className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs text-indigo-800 font-semibold mb-1">{language === 'en' ? 'GPS Location' : 'Lokasi GPS'}</p>
-                          <p className="text-sm text-indigo-900 font-mono">{tx.latitude.toFixed(5)}, {tx.longitude.toFixed(5)}</p>
+                          <a
+                            href={`https://www.google.com/maps?q=${tx.latitude},${tx.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-indigo-900 font-mono hover:underline flex items-center gap-1.5"
+                          >
+                            {tx.latitude!.toFixed(5)}, {tx.longitude!.toFixed(5)}
+                            <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />
+                          </a>
                         </div>
                       </div>
                     </div>
