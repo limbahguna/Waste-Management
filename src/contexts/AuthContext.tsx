@@ -6,7 +6,7 @@ interface Profile {
   id: string;
   email: string;
   full_name: string;
-  role: 'producer' | 'public';
+  role: 'producer' | 'public' | 'eco_partner' | 'partner';
   points: number;
   phone?: string;
   address?: string;
