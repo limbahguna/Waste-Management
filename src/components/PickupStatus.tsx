@@ -19,6 +19,7 @@ interface PickupTransaction {
   pickup_date: string | null;
   producer_id: string | null;
   address: string | null;
+  description: string | null;
 }
 
 interface ProducerProfile {
