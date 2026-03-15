@@ -59,7 +59,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
 
   const t = (en: string, id: string) => language === 'en' ? en : id;
 
-  const isEcoPartner = userProfile?.role === 'producer';
+  const isEcoPartner = userProfile?.role === 'eco_partner' || userProfile?.role === 'partner';
 
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
