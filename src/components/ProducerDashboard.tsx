@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabaseClient';
-import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale, Cpu, DollarSign, FileText, Navigation } from 'lucide-react';
+import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale, Cpu, DollarSign, FileText, Navigation, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
 import PickupModal from './PickupModal';
