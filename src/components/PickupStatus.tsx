@@ -67,7 +67,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     // For eco partners, fetch transactions assigned to them; for users, fetch their own
     let query = supabase
       .from('transactions')
-      .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address')
+      .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
       .in('status', ['awaiting_pickup', 'in_progress', 'pending', 'approved', 'truck_on_the_way'])
       .order('created_at', { ascending: false })
       .limit(1);
