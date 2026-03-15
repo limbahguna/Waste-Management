@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale, Cpu, DollarSign, FileText, Navigation, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
+import LanguageSwitcher from './LanguageSwitcher';
 import PickupModal from './PickupModal';
 import AIAnalysisModal from './AIAnalysisModal';
 const WasteMap = lazy(() => import('./WasteMap'));
