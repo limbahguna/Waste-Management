@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient';
 import { XCircle, Leaf, Package, TrendingUp, Truck, MapPin, User, Scale, Cpu, DollarSign, FileText, Navigation, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import CarbonTrendChart from './CarbonTrendChart';
+import LanguageSwitcher from './LanguageSwitcher';
 import PickupModal from './PickupModal';
 import AIAnalysisModal from './AIAnalysisModal';
 const WasteMap = lazy(() => import('./WasteMap'));
@@ -78,9 +79,9 @@ export default function ProducerDashboard() {
       dashTitle: 'Dashboard Produsen',
       dashSub: 'Kelola penawaran limbah dari Sobat Lingkungan',
       approved: 'Disetujui',
-      carbon: 'Carbon',
-      pending: 'Pending',
-      incomingOffers: 'Penawaran Limbah Masuk',
+      carbon: 'Karbon',
+      pending: 'Tertunda',
+      incomingOffers: 'Penawaran Masuk',
       incomingOffersSub: 'Review dan terima setoran limbah dari Sobat Lingkungan',
       noOffers: 'Tidak ada penawaran pending',
       noOffersSub: 'Penawaran baru akan muncul di sini',
@@ -288,7 +289,10 @@ export default function ProducerDashboard() {
   return (
     <div className="pb-20 bg-gray-50 min-h-screen">
       <div className="bg-gradient-to-br from-green-400 to-green-600 text-white p-6 rounded-b-3xl shadow-lg">
-        <h1 className="text-2xl font-bold mb-2">{t.dashTitle}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold">{t.dashTitle}</h1>
+          <LanguageSwitcher />
+        </div>
         <p className="text-sm text-green-50">{t.dashSub}</p>
       </div>
 
