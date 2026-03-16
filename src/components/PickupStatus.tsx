@@ -65,6 +65,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     window.location.hostname.includes('lovable.app') ||
     window.location.hostname.includes('lovableproject.com')
   );
+  const shouldForceDispatchVisibility = isPreviewEnvironment || !currentRole?.trim();
   const isEcoPartner = currentRole === 'eco_partner' || currentRole === 'partner';
 
   const fetchData = async () => {
