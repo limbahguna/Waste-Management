@@ -52,7 +52,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const [producer, setProducer] = useState<ProducerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchedRole, setFetchedRole] = useState<string | null>(userProfile?.role ?? null);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const [_roleLoading, setRoleLoading] = useState(true);
 
   // Dispatch form state
   const [eta, setEta] = useState('');
