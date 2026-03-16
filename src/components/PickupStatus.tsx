@@ -1,4 +1,4 @@
-import { ArrowLeft, Phone, CheckCircle2, Circle, Truck, Package, Clock, AlertCircle, Send, CalendarClock, UserCheck } from 'lucide-react';
+import { ArrowLeft, Phone, CheckCircle2, Circle, Truck, Package, Clock, AlertCircle, Send, CalendarClock, UserCheck, MapPin, User, ShieldCheck, HandshakeIcon } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -18,6 +18,7 @@ interface PickupTransaction {
   created_at: string | null;
   pickup_date: string | null;
   producer_id: string | null;
+  user_id: string;
   address: string | null;
   description: string | null;
 }
@@ -27,10 +28,17 @@ interface ProducerProfile {
   phone: string | null;
 }
 
+interface WasteSubmitterProfile {
+  full_name: string | null;
+  phone: string | null;
+  address: string | null;
+}
+
 const steps = [
   { key: 'scanned', en: 'Scanned', id: 'Dipindai' },
   { key: 'partner_assigned', en: 'Partner Assigned', id: 'Mitra Ditugaskan' },
   { key: 'truck_on_way', en: 'Truck on the Way', id: 'Truk Dalam Perjalanan' },
+  { key: 'picked_up', en: 'Picked Up', id: 'Diambil' },
   { key: 'completed', en: 'Completed', id: 'Selesai' },
 ];
 
@@ -38,9 +46,11 @@ function getActiveStep(status: string | null): number {
   switch (status) {
     case 'pending': return 0;
     case 'awaiting_pickup': return 1;
+    case 'approved': return 1;
     case 'truck_on_the_way': return 2;
     case 'in_progress': return 2;
-    case 'completed': return 3;
+    case 'picked_up': return 3;
+    case 'completed': return 4;
     default: return 0;
   }
 }
@@ -50,9 +60,11 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const { user, profile: userProfile } = useAuth();
   const [tx, setTx] = useState<PickupTransaction | null>(null);
   const [producer, setProducer] = useState<ProducerProfile | null>(null);
+  const [wasteSubmitter, setWasteSubmitter] = useState<WasteSubmitterProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchedRole, setFetchedRole] = useState<string | null>(userProfile?.role ?? null);
   const [_roleLoading, setRoleLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Dispatch form state
   const [eta, setEta] = useState('');
@@ -71,18 +83,19 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
 
+    const selectFields = 'id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, user_id, address, description';
+
     // For eco partners, fetch transactions needing dispatch; for users, fetch their own
     let query = supabase
       .from('transactions')
-      .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
-      .in('status', ['awaiting_pickup', 'in_progress', 'pending', 'approved', 'truck_on_the_way'])
+      .select(selectFields)
+      .in('status', ['awaiting_pickup', 'in_progress', 'pending', 'approved', 'truck_on_the_way', 'picked_up'])
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (!isEcoPartner) {
       query = query.eq('user_id', user.id);
     }
-    // Eco partners see all transactions needing dispatch (RLS handles access)
 
     const { data: txData } = await query.maybeSingle();
 
@@ -91,7 +104,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     if (!transaction) {
       let fallbackQuery = supabase
         .from('transactions')
-        .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
+        .select(selectFields)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -105,7 +118,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
 
     setTx(transaction);
 
-    // Fetch assigned producer/partner info
+    // Fetch assigned partner info
     if (transaction?.producer_id) {
       const { data: profileData } = await supabase
         .from('profiles_public')
@@ -113,6 +126,22 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
         .eq('id', transaction.producer_id)
         .maybeSingle();
       setProducer(profileData as ProducerProfile | null);
+    }
+
+    // For eco partners: fetch the waste submitter (producer/user) profile
+    if (isEcoPartner && transaction?.user_id) {
+      const { data: submitterData } = await supabase
+        .from('profiles_public')
+        .select('full_name, phone')
+        .eq('id', transaction.user_id)
+        .maybeSingle();
+      
+      // Also get address from transaction itself
+      setWasteSubmitter({
+        full_name: (submitterData as any)?.full_name || null,
+        phone: (submitterData as any)?.phone || null,
+        address: transaction.address || null,
+      });
     }
 
     setLoading(false);
@@ -175,10 +204,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
       if (error) throw error;
 
       toast.success(t('Truck dispatched successfully!', 'Truk berhasil dikirim!'));
-
-      // Refresh data to reflect changes
       setTx(prev => prev ? { ...prev, status: 'truck_on_the_way', pickup_date: new Date().toISOString().split('T')[0], producer_id: user!.id } : null);
-      // Set partner info from the logged-in eco partner's profile
       setProducer({
         full_name: userProfile?.full_name || user!.email || null,
         phone: userProfile?.phone || null,
@@ -191,13 +217,50 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     }
   };
 
+  const handleMarkPickedUp = async () => {
+    if (!tx) return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'picked_up' })
+        .eq('id', tx.id);
+      if (error) throw error;
+      toast.success(t('Marked as picked up!', 'Ditandai sudah diambil!'));
+      setTx(prev => prev ? { ...prev, status: 'picked_up' } : null);
+    } catch (err) {
+      console.error(err);
+      toast.error(t('Failed to update status', 'Gagal memperbarui status'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmHandover = async () => {
+    if (!tx) return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'completed', approved_at: new Date().toISOString() })
+        .eq('id', tx.id);
+      if (error) throw error;
+      toast.success(t('Transaction completed! 🎉', 'Transaksi selesai! 🎉'));
+      setTx(prev => prev ? { ...prev, status: 'completed' } : null);
+    } catch (err) {
+      console.error(err);
+      toast.error(t('Failed to complete transaction', 'Gagal menyelesaikan transaksi'));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const activeStep = getActiveStep(tx?.status ?? null);
 
   const etaText = tx?.pickup_date
     ? new Date(tx.pickup_date).toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long' })
     : t('Not yet scheduled', 'Belum dijadwalkan');
 
-  // Extract driver info from description if stored
   const extractedDriver = tx?.description?.match(/\[Driver: (.+?)\]/)?.[1];
   const extractedEta = tx?.description?.match(/\[ETA: (.+?)\]/)?.[1];
 
@@ -234,7 +297,10 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   }
 
   const showDispatchForm = (isEcoPartner || shouldForceDispatchVisibility) && (tx.status === 'awaiting_pickup' || tx.status === 'approved');
-
+  const showMarkPickedUp = isEcoPartner && tx.status === 'truck_on_the_way';
+  const showConfirmHandover = !isEcoPartner && tx.status === 'picked_up';
+  const isCompleted = tx.status === 'completed';
+  
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
@@ -249,6 +315,41 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
       </div>
 
       <div className="px-5 mt-6 space-y-5">
+
+        {/* Completed Banner */}
+        {isCompleted && (
+          <div className="bg-emerald-100 border border-emerald-300 rounded-2xl p-5 text-center">
+            <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-2" />
+            <h2 className="text-lg font-bold text-emerald-800">{t('Pickup Completed!', 'Penjemputan Selesai!')}</h2>
+            <p className="text-sm text-emerald-700 mt-1">{t('This transaction has been successfully completed.', 'Transaksi ini telah berhasil diselesaikan.')}</p>
+          </div>
+        )}
+
+        {/* Picked Up Banner for Producer */}
+        {showConfirmHandover && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="bg-blue-100 p-2.5 rounded-xl">
+                <HandshakeIcon className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-blue-800">{t('Waste Has Been Picked Up', 'Limbah Telah Diambil')}</h2>
+                <p className="text-xs text-blue-600 mt-0.5">{t('The recovery partner has collected your waste. Please confirm the handover.', 'Mitra pemulihan telah mengambil limbah Anda. Silakan konfirmasi serah terima.')}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleConfirmHandover}
+              disabled={actionLoading}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {actionLoading
+                ? t('Confirming...', 'Mengkonfirmasi...')
+                : t('Confirm Handover', 'Konfirmasi Serah Terima')}
+            </button>
+          </div>
+        )}
+
         {/* Status Stepper */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <h2 className="text-sm font-bold text-gray-800 mb-5 flex items-center gap-2">
@@ -275,7 +376,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
                   </div>
                   <div className={`pb-8 ${isDone ? 'text-emerald-700 font-semibold' : isActive ? 'text-emerald-600 font-bold' : 'text-gray-400'}`}>
                     <p className="text-sm leading-none">{language === 'en' ? step.en : step.id}</p>
-                    {isActive && (
+                    {isActive && !isCompleted && (
                       <span className="text-xs text-emerald-500 mt-1 block">{t('In Progress', 'Sedang Berlangsung')}</span>
                     )}
                   </div>
@@ -333,6 +434,29 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
           </div>
         )}
 
+        {/* Mark as Picked Up - Eco Partner action */}
+        {showMarkPickedUp && (
+          <div className="bg-orange-50 rounded-2xl p-5 shadow-sm border border-orange-200">
+            <h2 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <Package className="w-4 h-4 text-orange-600" />
+              {t('Confirm Collection', 'Konfirmasi Pengambilan')}
+            </h2>
+            <p className="text-xs text-gray-500 mb-4">
+              {t('Press this button once you have collected the waste from the producer.', 'Tekan tombol ini setelah Anda mengambil limbah dari produsen.')}
+            </p>
+            <button
+              onClick={handleMarkPickedUp}
+              disabled={actionLoading}
+              className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {actionLoading
+                ? t('Updating...', 'Memperbarui...')
+                : t('Mark as Picked Up', 'Tandai Sudah Diambil')}
+            </button>
+          </div>
+        )}
+
         {/* ETA Card */}
         <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
           <div className="flex items-center gap-3 mb-2">
@@ -345,6 +469,48 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
             </div>
           </div>
         </div>
+
+        {/* Producer Details Card - visible to Eco Partners */}
+        {isEcoPartner && wasteSubmitter && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <User className="w-4 h-4 text-emerald-600" />
+              {t('Producer Details', 'Detail Produsen')}
+            </h2>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">{t('Name', 'Nama')}</span>
+                <span className="font-semibold text-gray-800">
+                  {wasteSubmitter.full_name || t('Unknown', 'Tidak diketahui')}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">{t('Contact', 'Kontak')}</span>
+                <span className="font-semibold text-gray-800">
+                  {wasteSubmitter.phone || '-'}
+                </span>
+              </div>
+              {wasteSubmitter.address && (
+                <div className="flex items-start justify-between text-sm gap-4">
+                  <span className="text-gray-500 flex items-center gap-1 shrink-0">
+                    <MapPin className="w-3.5 h-3.5" />
+                    {t('Address', 'Alamat')}
+                  </span>
+                  <span className="font-semibold text-gray-800 text-right">{wasteSubmitter.address}</span>
+                </div>
+              )}
+              {wasteSubmitter.phone && (
+                <a
+                  href={`tel:${wasteSubmitter.phone}`}
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  {t('Call Producer', 'Hubungi Produsen')}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Driver / Partner Info */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
