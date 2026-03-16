@@ -206,10 +206,15 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">{t('Loading pickup data...', 'Memuat data penjemputan...')}</p>
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
+          {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">{t('Loading pickup data...', 'Memuat data penjemputan...')}</p>
+          </div>
         </div>
       </div>
     );
@@ -218,6 +223,9 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   if (!tx) {
     return (
       <div className="pb-24 bg-gray-50 min-h-screen">
+        <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
+          {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
+        </div>
         <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 text-white px-5 pt-12 pb-6 rounded-b-3xl">
           <button onClick={onBack} className="flex items-center gap-2 mb-4 text-emerald-100 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -234,7 +242,8 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     );
   }
 
-  const showDispatchForm = isEcoPartner && (tx.status === 'awaiting_pickup' || tx.status === 'approved');
+  const showDispatchForm = (isEcoPartner || shouldForceDispatchVisibility) && (tx.status === 'awaiting_pickup' || tx.status === 'approved');
+
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
