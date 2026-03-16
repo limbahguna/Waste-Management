@@ -121,8 +121,36 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   };
 
   useEffect(() => {
+    const fetchRole = async () => {
+      if (!user?.id) {
+        setFetchedRole(null);
+        setRoleLoading(false);
+        return;
+      }
+
+      setRoleLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setFetchedRole(userProfile?.role ?? null);
+      } else {
+        setFetchedRole(data?.role ?? userProfile?.role ?? null);
+      }
+
+      setRoleLoading(false);
+    };
+
+    fetchRole();
+  }, [user?.id, userProfile?.role]);
+
+  useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user, currentRole]);
 
   const handleDispatch = async () => {
     if (!tx || !eta.trim()) {
