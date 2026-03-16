@@ -247,6 +247,9 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
+      <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
+        {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 text-white px-5 pt-12 pb-6 rounded-b-3xl">
         <button onClick={onBack} className="flex items-center gap-2 mb-4 text-emerald-100 hover:text-white transition-colors">
