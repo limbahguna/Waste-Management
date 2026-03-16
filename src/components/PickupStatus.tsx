@@ -51,6 +51,8 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const [tx, setTx] = useState<PickupTransaction | null>(null);
   const [producer, setProducer] = useState<ProducerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchedRole, setFetchedRole] = useState<string | null>(userProfile?.role ?? null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   // Dispatch form state
   const [eta, setEta] = useState('');
@@ -58,8 +60,12 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const [dispatching, setDispatching] = useState(false);
 
   const t = (en: string, id: string) => language === 'en' ? en : id;
-
-  const isEcoPartner = userProfile?.role === 'eco_partner' || userProfile?.role === 'partner';
+  const currentRole = fetchedRole ?? userProfile?.role ?? null;
+  const isPreviewEnvironment = typeof window !== 'undefined' && (
+    window.location.hostname.includes('lovable.app') ||
+    window.location.hostname.includes('lovableproject.com')
+  );
+  const isEcoPartner = currentRole === 'eco_partner' || currentRole === 'partner';
 
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
