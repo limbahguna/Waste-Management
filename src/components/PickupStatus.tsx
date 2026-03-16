@@ -51,6 +51,8 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const [tx, setTx] = useState<PickupTransaction | null>(null);
   const [producer, setProducer] = useState<ProducerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchedRole, setFetchedRole] = useState<string | null>(userProfile?.role ?? null);
+  const [roleLoading, setRoleLoading] = useState(true);
 
   // Dispatch form state
   const [eta, setEta] = useState('');
@@ -58,8 +60,13 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const [dispatching, setDispatching] = useState(false);
 
   const t = (en: string, id: string) => language === 'en' ? en : id;
-
-  const isEcoPartner = userProfile?.role === 'eco_partner' || userProfile?.role === 'partner';
+  const currentRole = fetchedRole ?? userProfile?.role ?? null;
+  const isPreviewEnvironment = typeof window !== 'undefined' && (
+    window.location.hostname.includes('lovable.app') ||
+    window.location.hostname.includes('lovableproject.com')
+  );
+  const shouldForceDispatchVisibility = isPreviewEnvironment || !currentRole?.trim();
+  const isEcoPartner = currentRole === 'eco_partner' || currentRole === 'partner';
 
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
@@ -115,8 +122,36 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   };
 
   useEffect(() => {
+    const fetchRole = async () => {
+      if (!user?.id) {
+        setFetchedRole(null);
+        setRoleLoading(false);
+        return;
+      }
+
+      setRoleLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setFetchedRole(userProfile?.role ?? null);
+      } else {
+        setFetchedRole(data?.role ?? userProfile?.role ?? null);
+      }
+
+      setRoleLoading(false);
+    };
+
+    fetchRole();
+  }, [user?.id, userProfile?.role]);
+
+  useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user, currentRole]);
 
   const handleDispatch = async () => {
     if (!tx || !eta.trim()) {
@@ -171,10 +206,15 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">{t('Loading pickup data...', 'Memuat data penjemputan...')}</p>
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
+          {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">{t('Loading pickup data...', 'Memuat data penjemputan...')}</p>
+          </div>
         </div>
       </div>
     );
@@ -183,6 +223,9 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   if (!tx) {
     return (
       <div className="pb-24 bg-gray-50 min-h-screen">
+        <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
+          {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
+        </div>
         <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 text-white px-5 pt-12 pb-6 rounded-b-3xl">
           <button onClick={onBack} className="flex items-center gap-2 mb-4 text-emerald-100 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -199,10 +242,14 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
     );
   }
 
-  const showDispatchForm = isEcoPartner && (tx.status === 'awaiting_pickup' || tx.status === 'approved');
+  const showDispatchForm = (isEcoPartner || shouldForceDispatchVisibility) && (tx.status === 'awaiting_pickup' || tx.status === 'approved');
+
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
+      <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
+        {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-b from-emerald-600 to-emerald-800 text-white px-5 pt-12 pb-6 rounded-b-3xl">
         <button onClick={onBack} className="flex items-center gap-2 mb-4 text-emerald-100 hover:text-white transition-colors">
