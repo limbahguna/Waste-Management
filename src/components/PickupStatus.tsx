@@ -204,9 +204,6 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <div className="px-4 py-2 text-xs font-medium bg-amber-100 text-amber-900 border-b border-amber-200">
-          {t('Debug - Current Role:', 'Debug - Role Saat Ini:')} {roleLoading ? t('Loading...', 'Memuat...') : (currentRole || 'undefined')}
-        </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500 mx-auto mb-3" />
