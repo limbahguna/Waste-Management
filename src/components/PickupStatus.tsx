@@ -163,6 +163,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
         .update({
           status: 'truck_on_the_way',
           pickup_date: new Date().toISOString().split('T')[0],
+          producer_id: user!.id,
           description: [
             tx.description || '',
             `[ETA: ${eta.trim()}]`,
