@@ -71,7 +71,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const fetchData = async () => {
     if (!user) { setLoading(false); return; }
 
-    // For eco partners, fetch transactions assigned to them; for users, fetch their own
+    // For eco partners, fetch transactions needing dispatch; for users, fetch their own
     let query = supabase
       .from('transactions')
       .select('id, waste_type, weight_kg, grade, status, created_at, pickup_date, producer_id, address, description')
@@ -79,11 +79,10 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
       .order('created_at', { ascending: false })
       .limit(1);
 
-    if (isEcoPartner) {
-      query = query.eq('producer_id', user.id);
-    } else {
+    if (!isEcoPartner) {
       query = query.eq('user_id', user.id);
     }
+    // Eco partners see all transactions needing dispatch (RLS handles access)
 
     const { data: txData } = await query.maybeSingle();
 
@@ -96,9 +95,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (isEcoPartner) {
-        fallbackQuery = fallbackQuery.eq('producer_id', user.id);
-      } else {
+      if (!isEcoPartner) {
         fallbackQuery = fallbackQuery.eq('user_id', user.id);
       }
 
