@@ -300,7 +300,7 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
   const showMarkPickedUp = isEcoPartner && tx.status === 'truck_on_the_way';
   const showConfirmHandover = !isEcoPartner && tx.status === 'picked_up';
   const isCompleted = tx.status === 'completed';
-  const isUserTheSubmitter = tx.user_id === user?.id;
+  
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
