@@ -177,13 +177,12 @@ export default function PickupStatus({ onBack }: PickupStatusProps) {
       toast.success(t('Truck dispatched successfully!', 'Truk berhasil dikirim!'));
 
       // Refresh data to reflect changes
-      setTx(prev => prev ? { ...prev, status: 'truck_on_the_way', pickup_date: new Date().toISOString().split('T')[0] } : null);
-      if (user) {
-        setProducer(prev => ({
-          full_name: driverName.trim() || prev?.full_name || null,
-          phone: prev?.phone || null,
-        }));
-      }
+      setTx(prev => prev ? { ...prev, status: 'truck_on_the_way', pickup_date: new Date().toISOString().split('T')[0], producer_id: user!.id } : null);
+      // Set partner info from the logged-in eco partner's profile
+      setProducer({
+        full_name: userProfile?.full_name || user!.email || null,
+        phone: userProfile?.phone || null,
+      });
     } catch (err) {
       console.error(err);
       toast.error(t('Failed to dispatch truck', 'Gagal mengirim truk'));
