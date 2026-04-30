@@ -261,6 +261,35 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </button>
       </section>
 
+      {/* ── SEE IT IN ACTION ── */}
+      <section className="py-20 px-6 bg-slate-900/80">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">See It In Action</h2>
+            <p className="text-slate-400 mt-4 max-w-lg mx-auto">AI-powered waste analysis, designed for real-world conditions.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="rounded-2xl border border-white/10 bg-slate-800/40 p-2 shadow-lg">
+              <img
+                src="/ai-scan-result.jpg"
+                alt="AI Analysis Result"
+                loading="lazy"
+                className="w-full rounded-xl"
+              />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-800/40 p-2 shadow-lg">
+              <img
+                src="/ai-scan-analysis.jpg"
+                alt="AI Analysis Log"
+                loading="lazy"
+                className="w-full rounded-xl"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── PROBLEM & SOLUTION ── */}
       <section id="problem" className="py-24 px-6 bg-slate-900">
         <div className="max-w-6xl mx-auto">
@@ -318,8 +347,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-950">
-        <div className="max-w-6xl mx-auto">
+      <section id="how-it-works" className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+        {/* Atmospheric warehouse background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="/warehouse-1.jpg"
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover opacity-[0.12] blur-[2px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/80 to-slate-950" />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.processLabel}</span>
             <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.processTitle}</h2>
@@ -383,6 +422,28 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TRUSTED BY REAL USERS ── */}
+      <section className="relative py-16 px-6 overflow-hidden">
+        {/* Atmospheric background photo */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="/eco-partner-with-app.jpg"
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover opacity-[0.15] blur-[3px] scale-105"
+          />
+          <div className="absolute inset-0 bg-slate-950/80" />
+        </div>
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <div className="border border-white/10 rounded-2xl bg-white/[0.03] backdrop-blur-sm px-8 py-10">
+            <p className="text-xl md:text-2xl font-semibold text-white leading-relaxed">
+              Built with and for the people working in waste recovery every day.
+            </p>
           </div>
         </div>
       </section>
