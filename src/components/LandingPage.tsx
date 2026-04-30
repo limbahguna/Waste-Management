@@ -354,7 +354,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             src="/warehouse-1.jpg"
             alt=""
             loading="lazy"
-            className="w-full h-full object-cover opacity-[0.12] blur-[2px]"
+            className="w-full h-full object-cover opacity-[0.18] blur-[1.5px]"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/80 to-slate-950" />
         </div>
@@ -434,9 +434,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             src="/eco-partner-with-app.jpg"
             alt=""
             loading="lazy"
-            className="w-full h-full object-cover opacity-[0.15] blur-[3px] scale-105"
+            className="w-full h-full object-cover opacity-[0.22] blur-[2px] scale-105"
           />
-          <div className="absolute inset-0 bg-slate-950/80" />
+          <div className="absolute inset-0 bg-slate-950/70" />
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
