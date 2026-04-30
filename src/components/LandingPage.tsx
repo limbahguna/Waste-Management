@@ -185,6 +185,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
+        {/* Atmospheric eco-partner background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="/eco-partner-with-app.jpg"
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover opacity-[0.28] blur-[3px] object-center"
+          />
+          <div className="absolute inset-0 bg-slate-950/65" />
+        </div>
         {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl" />
@@ -354,7 +364,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             src="/warehouse-1.jpg"
             alt=""
             loading="lazy"
-            className="w-full h-full object-cover opacity-[0.18] blur-[1.5px]"
+            className="w-full h-full object-cover opacity-[0.28] blur-[1px]"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/80 to-slate-950" />
         </div>
@@ -422,28 +432,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TRUSTED BY REAL USERS ── */}
-      <section className="relative py-16 px-6 overflow-hidden">
-        {/* Atmospheric background photo */}
-        <div className="absolute inset-0 pointer-events-none">
-          <img
-            src="/eco-partner-with-app.jpg"
-            alt=""
-            loading="lazy"
-            className="w-full h-full object-cover opacity-[0.22] blur-[2px] scale-105"
-          />
-          <div className="absolute inset-0 bg-slate-950/70" />
-        </div>
-
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="border border-white/10 rounded-2xl bg-white/[0.03] backdrop-blur-sm px-8 py-10">
-            <p className="text-xl md:text-2xl font-semibold text-white leading-relaxed">
-              Built with and for the people working in waste recovery every day.
-            </p>
           </div>
         </div>
       </section>
