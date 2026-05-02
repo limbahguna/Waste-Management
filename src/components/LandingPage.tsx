@@ -1,4 +1,5 @@
 import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -22,6 +23,9 @@ const landingTranslations = {
     proofAccuracy: '95% Classification Accuracy',
     proofTypes: 'Biomass · Plastic · E-Waste',
     proofTracking: 'Real-Time CO₂ Tracking',
+    visionLabel: 'Inside the Vision Engine',
+    visionTitle: 'Decentralized Quality Grading',
+    visionDesc: 'Our Computer Vision AI provides instant grading, moisture detection, and sorting decisions directly in the hands of our partners.',
     challengeLabel: 'The Challenge & Our Answer',
     challengeTitle: 'From Problem to Profit',
     problemBadge: '⚠ The Problem',
@@ -88,6 +92,9 @@ const landingTranslations = {
     proofAccuracy: 'Akurasi Klasifikasi 95%',
     proofTypes: 'Biomassa · Plastik · E-Waste',
     proofTracking: 'Pelacakan CO₂ Real-Time',
+    visionLabel: 'Di Dalam Mesin Visi',
+    visionTitle: 'Penilaian Kualitas Terdesentralisasi',
+    visionDesc: 'AI Computer Vision kami memberikan penilaian instan, deteksi kelembapan, dan keputusan pemilahan langsung di tangan mitra kami.',
     challengeLabel: 'Tantangan & Jawaban Kami',
     challengeTitle: 'Dari Masalah ke Keuntungan',
     problemBadge: '⚠ Masalah',
@@ -145,12 +152,26 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { language, toggleLanguage } = useLanguage();
   const lt = landingTranslations[language];
 
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans scroll-smooth">
+      <style>{`
+        @keyframes lg-float-y { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-22px); } }
+        @keyframes lg-float-y-rev { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(22px); } }
+        .lg-float { animation: lg-float-y 14s ease-in-out infinite; }
+        .lg-float-rev { animation: lg-float-y-rev 16s ease-in-out infinite; }
+        .lg-emerald-glow { box-shadow: 0 0 40px -8px rgba(16,185,129,0.45), 0 0 80px -20px rgba(16,185,129,0.25); }
+      `}</style>
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
@@ -185,6 +206,34 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
+        {/* Ambient parallax background images */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="absolute top-20 -left-20 w-[55%] h-[80%] lg-float"
+            style={{ transform: `translateY(${scrollY * 0.25}px)` }}
+          >
+            <img
+              src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/eco-partner-with-app.jpg"
+              alt=""
+              aria-hidden="true"
+              className="w-full h-full object-cover rounded-2xl"
+              style={{ filter: 'blur(25px)', opacity: 0.15 }}
+            />
+          </div>
+          <div
+            className="absolute top-20 -right-20 w-[55%] h-[80%] lg-float-rev"
+            style={{ transform: `translateY(${scrollY * 0.18}px)` }}
+          >
+            <img
+              src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/warehouse-1.jpg"
+              alt=""
+              aria-hidden="true"
+              className="w-full h-full object-cover rounded-2xl"
+              style={{ filter: 'blur(25px)', opacity: 0.15 }}
+            />
+          </div>
+        </div>
+
         {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl" />
@@ -259,6 +308,48 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         >
           <ChevronDown className="w-6 h-6" />
         </button>
+      </section>
+
+      {/* ── INSIDE THE VISION ENGINE ── */}
+      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(hsl(160,60%,45%) 1px, transparent 1px), linear-gradient(90deg, hsl(160,60%,45%) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+        <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
+        <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+          {/* Visual stack */}
+          <div className="relative h-[480px]">
+            <div className="absolute top-0 left-0 w-[78%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/20 lg-float">
+              <img
+                src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/ai-scan-analysis.jpg"
+                alt="AI scan analysis"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute bottom-0 right-0 w-[72%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/30 lg-float-rev">
+              <img
+                src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/ai-scan-result.jpg"
+                alt="AI scan result"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Content */}
+          <div>
+            <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.visionLabel}</span>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-6 leading-tight">
+              {lt.visionTitle}
+            </h2>
+            <p className="text-lg text-slate-400 leading-relaxed">
+              {lt.visionDesc}
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ── PROBLEM & SOLUTION ── */}
