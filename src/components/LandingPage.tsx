@@ -206,6 +206,34 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
+        {/* Ambient parallax background images */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="absolute top-20 -left-20 w-[55%] h-[80%] lg-float"
+            style={{ transform: `translateY(${scrollY * 0.25}px)` }}
+          >
+            <img
+              src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/eco-partner-with-app.jpg"
+              alt=""
+              aria-hidden="true"
+              className="w-full h-full object-cover rounded-2xl"
+              style={{ filter: 'blur(25px)', opacity: 0.15 }}
+            />
+          </div>
+          <div
+            className="absolute top-20 -right-20 w-[55%] h-[80%] lg-float-rev"
+            style={{ transform: `translateY(${scrollY * 0.18}px)` }}
+          >
+            <img
+              src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/warehouse-1.jpg"
+              alt=""
+              aria-hidden="true"
+              className="w-full h-full object-cover rounded-2xl"
+              style={{ filter: 'blur(25px)', opacity: 0.15 }}
+            />
+          </div>
+        </div>
+
         {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl" />
