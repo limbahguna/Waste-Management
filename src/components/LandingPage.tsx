@@ -171,6 +171,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         .lg-float { animation: lg-float-y 14s ease-in-out infinite; }
         .lg-float-rev { animation: lg-float-y-rev 16s ease-in-out infinite; }
         .lg-emerald-glow { box-shadow: 0 0 40px -8px rgba(16,185,129,0.45), 0 0 80px -20px rgba(16,185,129,0.25); }
+        .lg-emerald-glow-xl {
+          box-shadow:
+            0 0 0 2px rgba(16,185,129,0.55),
+            0 0 60px -4px rgba(16,185,129,0.65),
+            0 0 140px -20px rgba(16,185,129,0.55),
+            0 0 220px -40px rgba(16,185,129,0.35);
+        }
       `}</style>
 
       {/* ── NAV ── */}
@@ -217,7 +224,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               alt=""
               aria-hidden="true"
               className="w-full h-full object-cover rounded-2xl"
-              style={{ filter: 'blur(25px)', opacity: 0.15 }}
+              style={{ filter: 'blur(20px)', opacity: 0.1 }}
             />
           </div>
           <div
@@ -229,7 +236,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               alt=""
               aria-hidden="true"
               className="w-full h-full object-cover rounded-2xl"
-              style={{ filter: 'blur(25px)', opacity: 0.15 }}
+              style={{ filter: 'blur(20px)', opacity: 0.1 }}
             />
           </div>
         </div>
@@ -320,17 +327,17 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           }}
         />
         <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
-        <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          {/* Visual stack */}
-          <div className="relative h-[480px]">
-            <div className="absolute top-0 left-0 w-[78%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/20 lg-float">
+        <div className="relative max-w-7xl mx-auto grid md:grid-cols-5 gap-12 items-center">
+          {/* Visual stack — 60% (3/5) */}
+          <div className="relative h-[640px] md:col-span-3">
+            <div className="absolute top-0 left-0 w-[82%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow-xl border-2 border-emerald-500/60 lg-float">
               <img
                 src="/ai-scan-analysis.jpg"
                 alt="AI scan analysis"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute bottom-0 right-0 w-[72%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/30 lg-float-rev">
+            <div className="absolute bottom-0 right-0 w-[78%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow-xl border-2 border-emerald-500/70 lg-float-rev">
               <img
                 src="/ai-scan-result.jpg"
                 alt="AI scan result"
@@ -339,8 +346,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
           </div>
 
-          {/* Content */}
-          <div>
+          {/* Content — 40% (2/5) */}
+          <div className="md:col-span-2">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.visionLabel}</span>
             <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-6 leading-tight">
               {lt.visionTitle}
