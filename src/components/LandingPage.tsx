@@ -1,4 +1,5 @@
-import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages } from 'lucide-react';
+import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, Cpu } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -22,6 +23,9 @@ const landingTranslations = {
     proofAccuracy: '95% Classification Accuracy',
     proofTypes: 'Biomass · Plastic · E-Waste',
     proofTracking: 'Real-Time CO₂ Tracking',
+    visionLabel: 'Inside the Vision Engine',
+    visionTitle: 'Decentralized Quality Grading',
+    visionDesc: 'Our Computer Vision AI provides instant grading, moisture detection, and sorting decisions directly in the hands of our partners.',
     challengeLabel: 'The Challenge & Our Answer',
     challengeTitle: 'From Problem to Profit',
     problemBadge: '⚠ The Problem',
@@ -88,6 +92,9 @@ const landingTranslations = {
     proofAccuracy: 'Akurasi Klasifikasi 95%',
     proofTypes: 'Biomassa · Plastik · E-Waste',
     proofTracking: 'Pelacakan CO₂ Real-Time',
+    visionLabel: 'Di Dalam Mesin Visi',
+    visionTitle: 'Penilaian Kualitas Terdesentralisasi',
+    visionDesc: 'AI Computer Vision kami memberikan penilaian instan, deteksi kelembapan, dan keputusan pemilahan langsung di tangan mitra kami.',
     challengeLabel: 'Tantangan & Jawaban Kami',
     challengeTitle: 'Dari Masalah ke Keuntungan',
     problemBadge: '⚠ Masalah',
