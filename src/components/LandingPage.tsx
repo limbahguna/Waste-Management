@@ -1,4 +1,4 @@
-import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, Cpu } from 'lucide-react';
+import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -152,12 +152,26 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const { language, toggleLanguage } = useLanguage();
   const lt = landingTranslations[language];
 
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans scroll-smooth">
+      <style>{`
+        @keyframes lg-float-y { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-22px); } }
+        @keyframes lg-float-y-rev { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(22px); } }
+        .lg-float { animation: lg-float-y 14s ease-in-out infinite; }
+        .lg-float-rev { animation: lg-float-y-rev 16s ease-in-out infinite; }
+        .lg-emerald-glow { box-shadow: 0 0 40px -8px rgba(16,185,129,0.45), 0 0 80px -20px rgba(16,185,129,0.25); }
+      `}</style>
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
