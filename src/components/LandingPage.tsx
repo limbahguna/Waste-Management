@@ -171,6 +171,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         .lg-float { animation: lg-float-y 14s ease-in-out infinite; }
         .lg-float-rev { animation: lg-float-y-rev 16s ease-in-out infinite; }
         .lg-emerald-glow { box-shadow: 0 0 40px -8px rgba(16,185,129,0.45), 0 0 80px -20px rgba(16,185,129,0.25); }
+        .lg-emerald-glow-xl {
+          box-shadow:
+            0 0 0 2px rgba(16,185,129,0.55),
+            0 0 60px -4px rgba(16,185,129,0.65),
+            0 0 140px -20px rgba(16,185,129,0.55),
+            0 0 220px -40px rgba(16,185,129,0.35);
+        }
       `}</style>
 
       {/* ── NAV ── */}
