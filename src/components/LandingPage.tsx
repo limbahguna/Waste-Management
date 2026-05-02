@@ -213,7 +213,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             style={{ transform: `translateY(${scrollY * 0.25}px)` }}
           >
             <img
-              src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/eco-partner-with-app.jpg"
+              src="/eco-partner-with-app.jpg"
               alt=""
               aria-hidden="true"
               className="w-full h-full object-cover rounded-2xl"
@@ -225,7 +225,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             style={{ transform: `translateY(${scrollY * 0.18}px)` }}
           >
             <img
-              src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/warehouse-1.jpg"
+              src="/warehouse-1.jpg"
               alt=""
               aria-hidden="true"
               className="w-full h-full object-cover rounded-2xl"
@@ -325,14 +325,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="relative h-[480px]">
             <div className="absolute top-0 left-0 w-[78%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/20 lg-float">
               <img
-                src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/ai-scan-analysis.jpg"
+                src="/ai-scan-analysis.jpg"
                 alt="AI scan analysis"
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="absolute bottom-0 right-0 w-[72%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/30 lg-float-rev">
               <img
-                src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/ai-scan-result.jpg"
+                src="/ai-scan-result.jpg"
                 alt="AI scan result"
                 className="w-full h-full object-cover"
               />
