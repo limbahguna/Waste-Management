@@ -310,6 +310,48 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </button>
       </section>
 
+      {/* ── INSIDE THE VISION ENGINE ── */}
+      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(hsl(160,60%,45%) 1px, transparent 1px), linear-gradient(90deg, hsl(160,60%,45%) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+        <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
+        <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+          {/* Visual stack */}
+          <div className="relative h-[480px]">
+            <div className="absolute top-0 left-0 w-[78%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/20 lg-float">
+              <img
+                src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/ai-scan-analysis.jpg"
+                alt="AI scan analysis"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="absolute bottom-0 right-0 w-[72%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow border border-emerald-500/30 lg-float-rev">
+              <img
+                src="https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/ai-scan-result.jpg"
+                alt="AI scan result"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Content */}
+          <div>
+            <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.visionLabel}</span>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-6 leading-tight">
+              {lt.visionTitle}
+            </h2>
+            <p className="text-lg text-slate-400 leading-relaxed">
+              {lt.visionDesc}
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── PROBLEM & SOLUTION ── */}
       <section id="problem" className="py-24 px-6 bg-slate-900">
         <div className="max-w-6xl mx-auto">
