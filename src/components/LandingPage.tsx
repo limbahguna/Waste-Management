@@ -231,33 +231,21 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
-        {/* Full-width background slider */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden bg-slate-950">
-          {heroSlides.map((src, i) => (
-            <div
-              key={src}
-              className="lg-hero-slide absolute inset-0"
-              style={{ opacity: i === activeSlide ? 1 : 0 }}
-            >
-              <div
-                className="absolute inset-0 bg-cover bg-center lg-hero-zoom"
-                style={{
-                  backgroundImage: `url('${src}')`,
-                  filter: 'brightness(0.65)',
-                  transform: `scale(1.05) translateY(${scrollY * 0.15}px)`,
-                }}
-              />
-            </div>
-          ))}
-          {/* Soft bottom gradient for text legibility & section blend */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(2,6,23,0.35) 0%, rgba(2,6,23,0.15) 40%, rgba(2,6,23,0.85) 100%)',
-            }}
+        {/* Atmospheric eco-partner background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="/eco-partner-with-app.jpg"
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover opacity-[0.28] blur-[3px] object-center"
           />
-          {/* Very subtle grid overlay */}
+          <div className="absolute inset-0 bg-slate-950/65" />
+        </div>
+        {/* Background glow effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-emerald-700/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-1/4 w-[250px] h-[250px] bg-teal-500/8 rounded-full blur-3xl" />
           <div
             className="absolute inset-0 opacity-[0.025]"
             style={{
@@ -346,44 +334,31 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </button>
       </section>
 
-      {/* ── INSIDE THE VISION ENGINE ── */}
-      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{
-            backgroundImage: 'linear-gradient(hsl(160,60%,45%) 1px, transparent 1px), linear-gradient(90deg, hsl(160,60%,45%) 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
-        <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
-        <div className="relative max-w-7xl mx-auto grid md:grid-cols-5 gap-12 items-center">
-          {/* Visual stack — 60% (3/5) */}
-          <div className="relative h-[640px] md:col-span-3">
-            <div className="absolute top-0 left-0 w-[82%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow-xl border-2 border-emerald-500/60 lg-float">
-              <img
-                src="/ai-scan-analysis.jpg"
-                alt="AI scan analysis"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="absolute bottom-0 right-0 w-[78%] aspect-[4/3] rounded-2xl overflow-hidden lg-emerald-glow-xl border-2 border-emerald-500/70 lg-float-rev">
-              <img
-                src="/ai-scan-result.jpg"
-                alt="AI scan result"
-                className="w-full h-full object-cover"
-              />
-            </div>
+      {/* ── SEE IT IN ACTION ── */}
+      <section className="py-20 px-6 bg-slate-900/80">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white">See It In Action</h2>
+            <p className="text-slate-400 mt-4 max-w-lg mx-auto">AI-powered waste analysis, designed for real-world conditions.</p>
           </div>
 
-          {/* Content — 40% (2/5) */}
-          <div className="md:col-span-2">
-            <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.visionLabel}</span>
-            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-6 leading-tight">
-              {lt.visionTitle}
-            </h2>
-            <p className="text-lg text-slate-400 leading-relaxed">
-              {lt.visionDesc}
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="rounded-2xl border border-white/10 bg-slate-800/40 p-2 shadow-lg">
+              <img
+                src="/ai-scan-result.jpg"
+                alt="AI Analysis Result"
+                loading="lazy"
+                className="w-full rounded-xl"
+              />
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-800/40 p-2 shadow-lg">
+              <img
+                src="/ai-scan-analysis.jpg"
+                alt="AI Analysis Log"
+                loading="lazy"
+                className="w-full rounded-xl"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -445,8 +420,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-950">
-        <div className="max-w-6xl mx-auto">
+      <section id="how-it-works" className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+        {/* Atmospheric warehouse background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <img
+            src="/warehouse-1.jpg"
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover opacity-[0.28] blur-[1px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/80 to-slate-950" />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.processLabel}</span>
             <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.processTitle}</h2>
