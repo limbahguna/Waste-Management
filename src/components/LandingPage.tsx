@@ -178,6 +178,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             0 0 140px -20px rgba(16,185,129,0.55),
             0 0 220px -40px rgba(16,185,129,0.35);
         }
+        @keyframes lg-hero-zoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        .lg-hero-zoom { animation: lg-hero-zoom 8s ease-out forwards; transform-origin: center; }
       `}</style>
 
       {/* ── NAV ── */}
