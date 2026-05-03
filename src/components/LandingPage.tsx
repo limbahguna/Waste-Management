@@ -159,6 +159,20 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Hero background slider
+  const heroSlides = [
+    '/eco-partner-with-app.jpg',
+    '/warehouse-1.jpg',
+    '/warehouse-2.jpg',
+  ];
+  const [activeSlide, setActiveSlide] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveSlide((i) => (i + 1) % heroSlides.length);
+    }, 6000);
+    return () => clearInterval(id);
+  }, []);
+
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -178,8 +192,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             0 0 140px -20px rgba(16,185,129,0.55),
             0 0 220px -40px rgba(16,185,129,0.35);
         }
-        @keyframes lg-hero-zoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
-        .lg-hero-zoom { animation: lg-hero-zoom 8s ease-out forwards; transform-origin: center; }
+        @keyframes lg-hero-zoom { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+        .lg-hero-zoom { animation: lg-hero-zoom 12s ease-out forwards; transform-origin: center; }
+        .lg-hero-text-shadow { text-shadow: 0 2px 20px rgba(0,0,0,0.75), 0 1px 3px rgba(0,0,0,0.6); }
+        .lg-hero-slide { transition: opacity 1.4s ease-in-out; }
       `}</style>
 
       {/* ── NAV ── */}
@@ -231,16 +247,17 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-emerald-700/10 rounded-full blur-3xl" />
           <div className="absolute top-1/3 right-1/4 w-[250px] h-[250px] bg-teal-500/8 rounded-full blur-3xl" />
           <div
-            className="absolute inset-0 opacity-[0.04]"
+            className="absolute inset-0 opacity-[0.025]"
             style={{
-              backgroundImage: 'linear-gradient(hsl(160,60%,45%) 1px, transparent 1px), linear-gradient(90deg, hsl(160,60%,45%) 1px, transparent 1px)',
-              backgroundSize: '60px 60px',
+              backgroundImage:
+                'linear-gradient(hsl(160,60%,45%) 1px, transparent 1px), linear-gradient(90deg, hsl(160,60%,45%) 1px, transparent 1px)',
+              backgroundSize: '80px 80px',
             }}
           />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-8 tracking-wide uppercase">
+        <div className="relative z-10 max-w-4xl mx-auto text-center lg-hero-text-shadow">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-semibold px-4 py-1.5 rounded-full mb-8 tracking-wide uppercase backdrop-blur-sm">
             <Zap className="w-3.5 h-3.5" />
             {lt.badge}
           </div>
@@ -255,8 +272,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <span className="text-white">{lt.heroTitle3}</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
-            {lt.heroDesc} <span className="text-slate-200 font-medium">{lt.heroDescHighlight}</span>.
+          <p className="text-lg md:text-xl text-slate-200/90 max-w-2xl mx-auto leading-relaxed mb-10">
+            {lt.heroDesc} <span className="text-white font-medium">{lt.heroDescHighlight}</span>.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -269,33 +286,49 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </button>
             <button
               onClick={() => scrollToSection('how-it-works')}
-              className="text-slate-400 hover:text-white font-medium text-base px-8 py-4 rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200 hover:bg-white/5"
+              className="text-white/90 hover:text-white font-medium text-base px-8 py-4 rounded-xl border border-white/25 hover:border-white/50 transition-all duration-200 hover:bg-white/10 backdrop-blur-sm"
             >
               {lt.seeHowItWorks}
             </button>
           </div>
 
-          <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-slate-500">
+          <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-slate-200/80">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              <CheckCircle className="w-4 h-4 text-emerald-400" />
               <span>{lt.proofAccuracy}</span>
             </div>
-            <div className="w-px h-4 bg-slate-700 hidden sm:block" />
+            <div className="w-px h-4 bg-white/30 hidden sm:block" />
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              <CheckCircle className="w-4 h-4 text-emerald-400" />
               <span>{lt.proofTypes}</span>
             </div>
-            <div className="w-px h-4 bg-slate-700 hidden sm:block" />
+            <div className="w-px h-4 bg-white/30 hidden sm:block" />
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              <CheckCircle className="w-4 h-4 text-emerald-400" />
               <span>{lt.proofTracking}</span>
             </div>
           </div>
         </div>
 
+        {/* Slider navigation dots */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3">
+          {heroSlides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveSlide(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`transition-all duration-300 rounded-full ${
+                i === activeSlide
+                  ? 'w-8 h-2 bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.7)]'
+                  : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+              }`}
+            />
+          ))}
+        </div>
+
         <button
           onClick={() => scrollToSection('problem')}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-slate-600 hover:text-slate-400 transition-colors animate-bounce"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/70 hover:text-white transition-colors animate-bounce z-20"
         >
           <ChevronDown className="w-6 h-6" />
         </button>
