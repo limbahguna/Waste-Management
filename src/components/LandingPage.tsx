@@ -178,6 +178,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             0 0 140px -20px rgba(16,185,129,0.55),
             0 0 220px -40px rgba(16,185,129,0.35);
         }
+        @keyframes lg-hero-zoom { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        .lg-hero-zoom { animation: lg-hero-zoom 8s ease-out forwards; transform-origin: center; }
       `}</style>
 
       {/* ── NAV ── */}
@@ -215,30 +217,67 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
         {/* Ambient parallax background images */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Left third — eco partner */}
           <div
-            className="absolute top-20 -left-20 w-[55%] h-[80%] lg-float"
-            style={{ transform: `translateY(${scrollY * 0.25}px)` }}
+            className="absolute inset-y-0 left-0 w-1/2"
+            style={{
+              transform: `translateY(${scrollY * 0.2}px)`,
+              WebkitMaskImage:
+                'radial-gradient(ellipse 70% 80% at 0% 50%, black 30%, transparent 75%)',
+              maskImage:
+                'radial-gradient(ellipse 70% 80% at 0% 50%, black 30%, transparent 75%)',
+            }}
           >
-            <img
-              src="/eco-partner-with-app.jpg"
-              alt=""
-              aria-hidden="true"
-              className="w-full h-full object-cover rounded-2xl"
-              style={{ filter: 'blur(20px)', opacity: 0.1 }}
+            <div
+              className="absolute inset-0 bg-cover bg-center lg-hero-zoom"
+              style={{
+                backgroundImage: "url('/eco-partner-with-app.jpg')",
+                opacity: 0.4,
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to right, rgba(2,6,23,1) 0%, rgba(2,6,23,0.55) 45%, rgba(2,6,23,0) 100%)',
+              }}
             />
           </div>
+          {/* Right third — warehouse */}
           <div
-            className="absolute top-20 -right-20 w-[55%] h-[80%] lg-float-rev"
-            style={{ transform: `translateY(${scrollY * 0.18}px)` }}
+            className="absolute inset-y-0 right-0 w-1/2"
+            style={{
+              transform: `translateY(${scrollY * 0.2}px)`,
+              WebkitMaskImage:
+                'radial-gradient(ellipse 70% 80% at 100% 50%, black 30%, transparent 75%)',
+              maskImage:
+                'radial-gradient(ellipse 70% 80% at 100% 50%, black 30%, transparent 75%)',
+            }}
           >
-            <img
-              src="/warehouse-1.jpg"
-              alt=""
-              aria-hidden="true"
-              className="w-full h-full object-cover rounded-2xl"
-              style={{ filter: 'blur(20px)', opacity: 0.1 }}
+            <div
+              className="absolute inset-0 bg-cover bg-center lg-hero-zoom"
+              style={{
+                backgroundImage: "url('/warehouse-1.jpg')",
+                opacity: 0.4,
+                animationDelay: '0.2s',
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to left, rgba(2,6,23,1) 0%, rgba(2,6,23,0.55) 45%, rgba(2,6,23,0) 100%)',
+              }}
             />
           </div>
+          {/* Center vignette to keep headline area clean */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(ellipse 50% 60% at 50% 50%, rgba(2,6,23,0.85) 0%, rgba(2,6,23,0) 70%)',
+            }}
+          />
         </div>
 
         {/* Background glow effects */}
