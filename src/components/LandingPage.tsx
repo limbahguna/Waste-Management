@@ -163,7 +163,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   const heroSlides = [
     '/eco-partner-with-app.jpg',
     '/warehouse-2.jpg',
-    'https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/warehouse%203.jpeg',
+    '/warehouse-3.jpeg',
   ];
   const [activeSlide, setActiveSlide] = useState(0);
   useEffect(() => {
