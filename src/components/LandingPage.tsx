@@ -162,7 +162,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
   // Hero background slider
   const heroSlides = [
     '/eco-partner-with-app.jpg',
-    '/warehouse-1.jpg',
+    'https://raw.githubusercontent.com/limbahguna/Limbahguna/main/public/warehouse%203.jpeg',
     '/warehouse-2.jpg',
   ];
   const [activeSlide, setActiveSlide] = useState(0);
