@@ -292,17 +292,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
-              onClick={onGetStarted}
+              onClick={() => scrollToSection('how-it-works')}
               className="group bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-base px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 flex items-center gap-2"
             >
-              {lt.openWebApp}
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <PlayCircle className="w-5 h-5" />
+              {lt.seeHowItWorks}
             </button>
             <button
-              onClick={() => scrollToSection('how-it-works')}
-              className="text-white/90 hover:text-white font-medium text-base px-8 py-4 rounded-xl border border-white/25 hover:border-white/50 transition-all duration-200 hover:bg-white/10 backdrop-blur-sm"
+              onClick={onGetStarted}
+              className="group text-white font-semibold text-base px-8 py-4 rounded-xl border-2 border-emerald-400/60 hover:border-emerald-400 hover:bg-emerald-500/10 transition-all duration-200 backdrop-blur-sm flex items-center gap-2"
             >
-              {lt.seeHowItWorks}
+              {lt.requestPilot}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
