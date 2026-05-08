@@ -282,12 +282,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent">
               {lt.heroTitle2}
             </span>
-            <br />
-            <span className="text-white">{lt.heroTitle3}</span>
+            {lt.heroTitle3 && (<><br /><span className="text-white">{lt.heroTitle3}</span></>)}
           </h1>
 
           <p className="text-lg md:text-xl text-slate-200/90 max-w-2xl mx-auto leading-relaxed mb-10">
-            {lt.heroDesc} <span className="text-white font-medium">{lt.heroDescHighlight}</span>.
+            {lt.heroDesc}{lt.heroDescHighlight && (<> <span className="text-white font-medium">{lt.heroDescHighlight}</span>.</>)}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
