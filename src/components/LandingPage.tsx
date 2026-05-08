@@ -349,6 +349,166 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </button>
       </section>
 
+      {/* ── IMPACT DASHBOARD METRIC BAR ── */}
+      <section className="relative -mt-px bg-slate-950 border-y border-emerald-500/15 py-10 px-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.03] via-transparent to-emerald-500/[0.03] pointer-events-none" />
+        <div className="relative max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+          {[
+            { icon: Scale, value: '1.2 Tons', label: language === 'en' ? 'Waste Digitized' : 'Limbah Terdigitalisasi' },
+            { icon: Activity, value: '95.2%', label: language === 'en' ? 'Grading Accuracy' : 'Akurasi Penilaian' },
+            { icon: Leaf, value: '320 kg', label: language === 'en' ? 'CO₂e Avoided' : 'CO₂e Dihindari' },
+            { icon: MapPin, value: '15+', label: language === 'en' ? 'Active Eco-Hubs' : 'Eco-Hub Aktif' },
+          ].map((m, i) => {
+            const Icon = m.icon;
+            return (
+              <div key={i} className="flex items-center gap-3 md:justify-center">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-xl md:text-2xl font-black text-white leading-none">{m.value}</div>
+                  <div className="text-[11px] md:text-xs text-slate-400 uppercase tracking-wider mt-1">{m.label}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── DIGITAL ECOSYSTEM: FIELD TO FACTORY ── */}
+      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+        <div className="absolute top-1/3 right-0 w-[400px] h-[400px] bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="text-center mb-14 max-w-2xl mx-auto">
+            <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
+              {language === 'en' ? 'Digital Ecosystem' : 'Ekosistem Digital'}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 leading-tight">
+              {language === 'en' ? 'From Field to Factory' : 'Dari Lapangan ke Pabrik'}
+            </h2>
+            <p className="text-slate-400 mt-4 leading-relaxed">
+              {language === 'en'
+                ? 'A unified pipeline connecting on-the-ground intelligence with industrial-grade oversight.'
+                : 'Pipeline terpadu yang menghubungkan kecerdasan lapangan dengan pengawasan tingkat industri.'}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Field Intelligence */}
+            <div className="bg-slate-900/60 border border-white/10 rounded-2xl overflow-hidden hover:border-emerald-500/40 transition-all duration-300 group">
+              <div className="relative aspect-[3/4] md:aspect-[4/5] overflow-hidden bg-slate-950">
+                <img
+                  src="/scan-eco-partner.jpeg"
+                  alt="Eco partner mobile scanning"
+                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+                <div className="absolute top-4 left-4 inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
+                  <Eye className="w-3.5 h-3.5" />
+                  {language === 'en' ? 'Field Intelligence' : 'Kecerdasan Lapangan'}
+                </div>
+              </div>
+              <div className="p-7">
+                <h3 className="text-xl font-bold text-white mb-3">
+                  {language === 'en' ? 'Real-time AI Grading & Carbon Tracking' : 'Penilaian AI & Pelacakan Karbon Real-time'}
+                </h3>
+                <p className="text-slate-400 leading-relaxed">
+                  {language === 'en'
+                    ? 'Our mobile app provides instant quality scores and environmental impact data directly at the source.'
+                    : 'Aplikasi mobile kami memberikan skor kualitas instan dan data dampak lingkungan langsung di sumbernya.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Industrial Oversight */}
+            <div className="bg-slate-900/60 border border-white/10 rounded-2xl overflow-hidden hover:border-emerald-500/40 transition-all duration-300 group">
+              <div className="relative aspect-[3/4] md:aspect-[4/5] overflow-hidden bg-slate-950">
+                <img
+                  src="/scan-producer-dashboard.jpg"
+                  alt="Producer dashboard analytics"
+                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+                <div className="absolute top-4 left-4 inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 backdrop-blur-md text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  {language === 'en' ? 'Industrial Oversight' : 'Pengawasan Industri'}
+                </div>
+              </div>
+              <div className="p-7">
+                <h3 className="text-xl font-bold text-white mb-3">
+                  {language === 'en' ? 'Industrial Transparency' : 'Transparansi Industri'}
+                </h3>
+                <p className="text-slate-400 leading-relaxed">
+                  {language === 'en'
+                    ? 'Producers gain full visibility into incoming feedstock with geospatial mapping, quality logs, and automated reporting.'
+                    : 'Produsen memperoleh visibilitas penuh atas bahan baku yang masuk dengan pemetaan geospasial, log kualitas, dan pelaporan otomatis.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY IT MATTERS ── */}
+      <section className="py-24 px-6 bg-slate-900 border-y border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-14 max-w-2xl mx-auto">
+            <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
+              {language === 'en' ? 'Why It Matters' : 'Mengapa Ini Penting'}
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3 leading-tight">
+              {language === 'en' ? 'The Recycling Industry is Broken. We Fix It.' : 'Industri Daur Ulang Bermasalah. Kami Perbaiki.'}
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: AlertTriangle,
+                stat: '80%',
+                text: language === 'en'
+                  ? 'of recyclables are lost due to contamination.'
+                  : 'material daur ulang hilang akibat kontaminasi.',
+                tone: 'red',
+              },
+              {
+                icon: Scale,
+                stat: '✕',
+                text: language === 'en'
+                  ? 'Manual sorting is non-scalable and prone to error.'
+                  : 'Pemilahan manual tidak scalable dan rentan kesalahan.',
+                tone: 'amber',
+              },
+              {
+                icon: Cpu,
+                stat: '✓',
+                text: language === 'en'
+                  ? 'Limbahguna solves this with industrial-grade Computer Vision.'
+                  : 'Limbahguna mengatasinya dengan Computer Vision tingkat industri.',
+                tone: 'emerald',
+              },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              const toneMap: Record<string, { ring: string; text: string; bg: string }> = {
+                red: { ring: 'border-red-500/20', text: 'text-red-400', bg: 'bg-red-500/10' },
+                amber: { ring: 'border-amber-500/20', text: 'text-amber-400', bg: 'bg-amber-500/10' },
+                emerald: { ring: 'border-emerald-500/30', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+              };
+              const t = toneMap[item.tone];
+              return (
+                <div key={i} className={`bg-slate-950/50 border ${t.ring} rounded-2xl p-8 hover:-translate-y-1 transition-all duration-300`}>
+                  <div className={`w-12 h-12 rounded-xl ${t.bg} border ${t.ring} flex items-center justify-center mb-6`}>
+                    <Icon className={`w-6 h-6 ${t.text}`} />
+                  </div>
+                  <div className={`text-4xl font-black ${t.text} mb-3 leading-none`}>{item.stat}</div>
+                  <p className="text-slate-300 leading-relaxed">{item.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ── INSIDE THE VISION ENGINE ── */}
       <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
         <div
