@@ -1,4 +1,4 @@
-import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, PlayCircle, Eye, AlertTriangle, Cpu, Scale, MapPin, Activity } from 'lucide-react';
+import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, PlayCircle, Eye, AlertTriangle, Cpu, Scale, MapPin, Activity, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -168,6 +168,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     '/warehouse-3.jpeg',
   ];
   const [activeSlide, setActiveSlide] = useState(0);
+  const [videoOpen, setVideoOpen] = useState(false);
+
+  useEffect(() => {
+    if (!videoOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setVideoOpen(false); };
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [videoOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       setActiveSlide((i) => (i + 1) % heroSlides.length);
@@ -291,7 +303,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
-              onClick={() => scrollToSection('how-it-works')}
+              onClick={() => setVideoOpen(true)}
               className="group bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-base px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 flex items-center gap-2"
             >
               <PlayCircle className="w-5 h-5" />
@@ -781,6 +793,38 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
         </div>
       </footer>
+
+      {/* ── VIDEO MODAL ── */}
+      {videoOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
+          onClick={() => setVideoOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            onClick={() => setVideoOpen(false)}
+            aria-label="Close video"
+            className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-full backdrop-blur-md border border-white/20 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div
+            className="relative w-full max-w-[420px] aspect-[9/16] max-h-[90vh] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-400/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <video
+              src="/video-ai.mp4"
+              autoPlay
+              muted
+              loop
+              controls
+              playsInline
+              className="w-full h-full object-contain bg-black"
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );
