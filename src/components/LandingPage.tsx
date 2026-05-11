@@ -1,4 +1,4 @@
-import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, PlayCircle, Eye, AlertTriangle, Cpu, Scale, MapPin, Activity, X } from 'lucide-react';
+import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, PlayCircle, Eye, AlertTriangle, Cpu, Scale, MapPin, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -168,18 +168,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     '/warehouse-3.jpeg',
   ];
   const [activeSlide, setActiveSlide] = useState(0);
-  const [videoOpen, setVideoOpen] = useState(false);
-
-  useEffect(() => {
-    if (!videoOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setVideoOpen(false); };
-    window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [videoOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       setActiveSlide((i) => (i + 1) % heroSlides.length);
@@ -303,7 +291,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
-              onClick={() => setVideoOpen(true)}
+              onClick={() => scrollToSection('ai-in-action')}
               className="group bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-base px-8 py-4 rounded-xl transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/30 hover:-translate-y-1 flex items-center gap-2"
             >
               <PlayCircle className="w-5 h-5" />
@@ -383,6 +371,51 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── AI IN ACTION (VIDEO DEMO) ── */}
+      <section id="ai-in-action" className="relative py-28 px-6 bg-slate-950 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.08),transparent_60%)] pointer-events-none" />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="text-center mb-16 max-w-2xl mx-auto">
+            <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
+              {language === 'en' ? 'AI in Action' : 'AI dalam Aksi'}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 leading-tight">
+              {language === 'en' ? 'See the Intelligence in Action' : 'Lihat Kecerdasan dalam Aksi'}
+            </h2>
+            <p className="text-slate-400 mt-4 leading-relaxed text-lg">
+              {language === 'en'
+                ? 'Our Computer Vision AI identifies waste type, quality grade, and carbon impact in milliseconds.'
+                : 'AI Computer Vision kami mengidentifikasi jenis limbah, tingkat kualitas, dan dampak karbon dalam milidetik.'}
+            </p>
+          </div>
+
+          <div className="relative flex items-center justify-center py-8">
+            {/* Emerald glow */}
+            <div className="absolute w-[420px] h-[420px] bg-emerald-500/30 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute w-[280px] h-[560px] bg-emerald-400/20 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Smartphone mockup */}
+            <div className="relative w-[300px] h-[620px] md:w-[340px] md:h-[700px] bg-slate-900 rounded-[3rem] border-[10px] border-slate-800 shadow-[0_25px_80px_-15px_rgba(16,185,129,0.45)] ring-1 ring-emerald-400/20 overflow-hidden">
+              {/* Notch */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-950 rounded-full z-20" />
+              {/* Side buttons */}
+              <div className="absolute -left-[14px] top-28 w-1 h-12 bg-slate-700 rounded-l" />
+              <div className="absolute -left-[14px] top-44 w-1 h-20 bg-slate-700 rounded-l" />
+              <div className="absolute -right-[14px] top-36 w-1 h-16 bg-slate-700 rounded-r" />
+
+              <video
+                src="/video-ai.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover bg-black rounded-[2.2rem]"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -793,38 +826,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
         </div>
       </footer>
-
-      {/* ── VIDEO MODAL ── */}
-      {videoOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
-          onClick={() => setVideoOpen(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            onClick={() => setVideoOpen(false)}
-            aria-label="Close video"
-            className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md border border-white/20 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div
-            className="relative h-[85vh] aspect-[9/16] max-w-[95vw] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/30 border border-emerald-400/20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <video
-              src="/video-ai.mp4"
-              autoPlay
-              muted
-              loop
-              controls
-              playsInline
-              className="absolute inset-0 w-full h-full object-contain bg-black"
-            />
-          </div>
-        </div>
-      )}
 
     </div>
   );
