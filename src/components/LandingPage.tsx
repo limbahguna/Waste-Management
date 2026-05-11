@@ -1,4 +1,4 @@
-import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, PlayCircle, Eye, AlertTriangle, Cpu, Scale, MapPin, Activity, X } from 'lucide-react';
+import { Camera, Bot, Recycle, ArrowRight, CheckCircle, Zap, Globe, Leaf, BarChart3, ChevronDown, Languages, PlayCircle, Eye, AlertTriangle, Cpu, Scale, MapPin, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Logo } from './Logo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -168,18 +168,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
     '/warehouse-3.jpeg',
   ];
   const [activeSlide, setActiveSlide] = useState(0);
-  const [videoOpen, setVideoOpen] = useState(false);
-
-  useEffect(() => {
-    if (!videoOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setVideoOpen(false); };
-    window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [videoOpen]);
   useEffect(() => {
     const id = setInterval(() => {
       setActiveSlide((i) => (i + 1) % heroSlides.length);
