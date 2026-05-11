@@ -839,38 +839,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
       </footer>
 
-      {/* ── VIDEO MODAL ── */}
-      {videoOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
-          onClick={() => setVideoOpen(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <button
-            onClick={() => setVideoOpen(false)}
-            aria-label="Close video"
-            className="absolute top-4 right-4 z-20 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md border border-white/20 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div
-            className="relative h-[85vh] aspect-[9/16] max-w-[95vw] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-emerald-500/30 border border-emerald-400/20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <video
-              src="/video-ai.mp4"
-              autoPlay
-              muted
-              loop
-              controls
-              playsInline
-              className="absolute inset-0 w-full h-full object-contain bg-black"
-            />
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
