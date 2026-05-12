@@ -387,8 +387,8 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </h2>
             <p className="text-slate-400 mt-4 leading-relaxed text-lg">
               {language === 'en'
-                ? 'Our Computer Vision AI identifies waste type, quality grade, and carbon impact in milliseconds.'
-                : 'AI Computer Vision kami mengidentifikasi jenis limbah, tingkat kualitas, dan dampak karbon dalam milidetik.'}
+                ? 'Our Computer Vision AI identifies waste type, quality grade, and carbon impact in seconds.'
+                : 'AI Computer Vision kami mengidentifikasi jenis limbah, tingkat kualitas, dan dampak karbon dalam hitungan detik.'}
             </p>
           </div>
 
