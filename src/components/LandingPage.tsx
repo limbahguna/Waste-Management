@@ -652,7 +652,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.processLabel}</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.processTitle}</h2>
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>{lt.processTitle}</h2>
             <p className="text-slate-400 mt-4 max-w-xl mx-auto">{lt.processDesc}</p>
           </div>
 
@@ -722,7 +722,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.impactLabel}</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.impactTitle}</h2>
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>{lt.impactTitle}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
