@@ -1,0 +1,9 @@
+# LimbahGuna
+
+> AI-powered platform digitizing agricultural waste with automated quality grading, computer vision classification, and real-time CO₂ tracking for the circular economy.
+
+LimbahGuna connects biomass producers, eco-partners, and material recovery facilities through a unified pipeline. Computer Vision AI identifies waste type, quality grade, and carbon impact in seconds, while a marketplace and pickup tracking system close the loop from field to factory.
+
+## Pages
+
+- [Home](/): Landing page with hero, AI demo video, ecosystem overview, process, and impact metrics.
