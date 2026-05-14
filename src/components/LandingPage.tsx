@@ -596,7 +596,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.challengeLabel}</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.challengeTitle}</h2>
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>{lt.challengeTitle}</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 items-stretch">
