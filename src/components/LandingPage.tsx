@@ -198,11 +198,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         .lg-hero-zoom { animation: lg-hero-zoom 12s ease-out forwards; transform-origin: center; }
         .lg-hero-text-shadow { text-shadow: 0 2px 20px rgba(0,0,0,0.75), 0 1px 3px rgba(0,0,0,0.6); }
         .lg-hero-slide { transition: opacity 1.4s ease-in-out; }
+        .lg-hero-overlay { background: linear-gradient(to bottom, rgba(2,6,23,0.35) 0%, rgba(2,6,23,0.15) 40%, rgba(2,6,23,0.85) 100%); }
+        @media (max-width: 639px) { .lg-hero-overlay { background: linear-gradient(to bottom, rgba(2,6,23,0.65) 0%, rgba(2,6,23,0.45) 40%, rgba(2,6,23,0.92) 100%); } }
       `}</style>
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo className="w-9 h-9" />
             <span className="font-bold text-lg tracking-tight text-white">Limbahguna</span>
@@ -232,7 +234,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-16 overflow-hidden">
         {/* Full-width background slider */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden bg-slate-950">
           {heroSlides.map((src, i) => (
@@ -252,13 +254,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
           ))}
           {/* Soft bottom gradient for text legibility & section blend */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(2,6,23,0.35) 0%, rgba(2,6,23,0.15) 40%, rgba(2,6,23,0.85) 100%)',
-            }}
-          />
+          <div className="absolute inset-0 lg-hero-overlay" />
           {/* Very subtle grid overlay */}
           <div
             className="absolute inset-0 opacity-[0.025]"
@@ -276,7 +272,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             {lt.badge}
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] mb-6">
+          <h1 className="font-black tracking-tight leading-[1.2] md:leading-[1.05] mb-6" style={{ fontSize: 'clamp(1.5rem, 5.5vw, 4.5rem)' }}>
             <span className="text-white">{lt.heroTitle1}</span>
             <br />
             <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent">
@@ -349,7 +345,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── IMPACT DASHBOARD METRIC BAR ── */}
-      <section className="relative -mt-px bg-slate-950 border-y border-emerald-500/15 py-10 px-6">
+      <section className="relative -mt-px bg-slate-950 border-y border-emerald-500/15 py-10 px-4 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.03] via-transparent to-emerald-500/[0.03] pointer-events-none" />
         <div className="relative max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
           {[
@@ -375,14 +371,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── AI IN ACTION (VIDEO DEMO) ── */}
-      <section id="ai-in-action" className="relative py-28 px-6 bg-slate-950 overflow-hidden">
+      <section id="ai-in-action" className="relative py-28 px-4 sm:px-6 bg-slate-950 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.08),transparent_60%)] pointer-events-none" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16 max-w-2xl mx-auto">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
               {language === 'en' ? 'AI in Action' : 'AI dalam Aksi'}
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 leading-tight">
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4.5vw, 3rem)' }}>
               {language === 'en' ? 'See the Intelligence in Action' : 'Lihat Kecerdasan dalam Aksi'}
             </h2>
             <p className="text-slate-400 mt-4 leading-relaxed text-lg">
@@ -420,14 +416,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── DIGITAL ECOSYSTEM: FIELD TO FACTORY ── */}
-      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+      <section className="relative py-24 px-4 sm:px-6 bg-slate-950 overflow-hidden">
         <div className="absolute top-1/3 right-0 w-[400px] h-[400px] bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-14 max-w-2xl mx-auto">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
               {language === 'en' ? 'Digital Ecosystem' : 'Ekosistem Digital'}
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 leading-tight">
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4.5vw, 3rem)' }}>
               {language === 'en' ? 'From Field to Factory' : 'Dari Lapangan ke Pabrik'}
             </h2>
             <p className="text-slate-400 mt-4 leading-relaxed">
@@ -494,13 +490,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── WHY IT MATTERS ── */}
-      <section className="py-24 px-6 bg-slate-900 border-y border-white/5">
+      <section className="py-24 px-4 sm:px-6 bg-slate-900 border-y border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14 max-w-2xl mx-auto">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
               {language === 'en' ? 'Why It Matters' : 'Mengapa Ini Penting'}
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3 leading-tight">
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>
               {language === 'en' ? 'The Recycling Industry is Broken. We Fix It.' : 'Industri Daur Ulang Bermasalah. Kami Perbaiki.'}
             </h2>
           </div>
@@ -554,7 +550,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── INSIDE THE VISION ENGINE ── */}
-      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+      <section className="relative py-24 px-4 sm:px-6 bg-slate-950 overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
@@ -585,7 +581,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           {/* Content — 40% (2/5) */}
           <div className="md:col-span-2">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.visionLabel}</span>
-            <h2 className="text-3xl md:text-5xl font-bold text-white mt-3 mb-6 leading-tight">
+            <h2 className="font-bold text-white mt-3 mb-6 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4.5vw, 3rem)' }}>
               {lt.visionTitle}
             </h2>
             <p className="text-lg text-slate-400 leading-relaxed">
@@ -596,11 +592,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── PROBLEM & SOLUTION ── */}
-      <section id="problem" className="py-24 px-6 bg-slate-900">
+      <section id="problem" className="py-24 px-4 sm:px-6 bg-slate-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.challengeLabel}</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.challengeTitle}</h2>
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>{lt.challengeTitle}</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 items-stretch">
@@ -652,11 +648,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-950">
+      <section id="how-it-works" className="py-24 px-4 sm:px-6 bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.processLabel}</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.processTitle}</h2>
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>{lt.processTitle}</h2>
             <p className="text-slate-400 mt-4 max-w-xl mx-auto">{lt.processDesc}</p>
           </div>
 
@@ -722,11 +718,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── IMPACT METRICS ── */}
-      <section id="impact" className="py-24 px-6 bg-gradient-to-b from-emerald-950/40 to-slate-900">
+      <section id="impact" className="py-24 px-4 sm:px-6 bg-gradient-to-b from-emerald-950/40 to-slate-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.impactLabel}</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">{lt.impactTitle}</h2>
+            <h2 className="font-bold text-white mt-3 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}>{lt.impactTitle}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -778,7 +774,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── BOTTOM CTA ── */}
-      <section className="py-24 px-6 bg-slate-950 relative overflow-hidden">
+      <section className="py-24 px-4 sm:px-6 bg-slate-950 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/8 rounded-full blur-3xl" />
         </div>
@@ -789,7 +785,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             {lt.ctaBadge}
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-5 leading-tight">
+          <h2 className="font-black text-white mb-5 leading-[1.2] md:leading-[1.1]" style={{ fontSize: 'clamp(1.75rem, 5vw, 3rem)' }}>
             {lt.ctaTitle1}<br />{lt.ctaTitle2}
           </h2>
           <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto leading-relaxed">{lt.ctaDesc}</p>
@@ -813,7 +809,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-slate-950 border-t border-white/5 py-10 px-6">
+      <footer className="bg-slate-950 border-t border-white/5 py-10 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Logo className="w-8 h-8" />
