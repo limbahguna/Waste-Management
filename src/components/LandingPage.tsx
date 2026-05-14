@@ -204,7 +204,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo className="w-9 h-9" />
             <span className="font-bold text-lg tracking-tight text-white">Limbahguna</span>
@@ -234,7 +234,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16 overflow-hidden">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-16 overflow-hidden">
         {/* Full-width background slider */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden bg-slate-950">
           {heroSlides.map((src, i) => (
@@ -345,7 +345,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── IMPACT DASHBOARD METRIC BAR ── */}
-      <section className="relative -mt-px bg-slate-950 border-y border-emerald-500/15 py-10 px-6">
+      <section className="relative -mt-px bg-slate-950 border-y border-emerald-500/15 py-10 px-4 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.03] via-transparent to-emerald-500/[0.03] pointer-events-none" />
         <div className="relative max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
           {[
@@ -371,7 +371,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── AI IN ACTION (VIDEO DEMO) ── */}
-      <section id="ai-in-action" className="relative py-28 px-6 bg-slate-950 overflow-hidden">
+      <section id="ai-in-action" className="relative py-28 px-4 sm:px-6 bg-slate-950 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.08),transparent_60%)] pointer-events-none" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16 max-w-2xl mx-auto">
@@ -416,7 +416,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── DIGITAL ECOSYSTEM: FIELD TO FACTORY ── */}
-      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+      <section className="relative py-24 px-4 sm:px-6 bg-slate-950 overflow-hidden">
         <div className="absolute top-1/3 right-0 w-[400px] h-[400px] bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-14 max-w-2xl mx-auto">
@@ -490,7 +490,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── WHY IT MATTERS ── */}
-      <section className="py-24 px-6 bg-slate-900 border-y border-white/5">
+      <section className="py-24 px-4 sm:px-6 bg-slate-900 border-y border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14 max-w-2xl mx-auto">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
@@ -550,7 +550,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── INSIDE THE VISION ENGINE ── */}
-      <section className="relative py-24 px-6 bg-slate-950 overflow-hidden">
+      <section className="relative py-24 px-4 sm:px-6 bg-slate-950 overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{
@@ -592,7 +592,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── PROBLEM & SOLUTION ── */}
-      <section id="problem" className="py-24 px-6 bg-slate-900">
+      <section id="problem" className="py-24 px-4 sm:px-6 bg-slate-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.challengeLabel}</span>
@@ -648,7 +648,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-950">
+      <section id="how-it-works" className="py-24 px-4 sm:px-6 bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.processLabel}</span>
@@ -718,7 +718,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── IMPACT METRICS ── */}
-      <section id="impact" className="py-24 px-6 bg-gradient-to-b from-emerald-950/40 to-slate-900">
+      <section id="impact" className="py-24 px-4 sm:px-6 bg-gradient-to-b from-emerald-950/40 to-slate-900">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{lt.impactLabel}</span>
@@ -774,7 +774,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── BOTTOM CTA ── */}
-      <section className="py-24 px-6 bg-slate-950 relative overflow-hidden">
+      <section className="py-24 px-4 sm:px-6 bg-slate-950 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-emerald-500/8 rounded-full blur-3xl" />
         </div>
@@ -809,7 +809,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-slate-950 border-t border-white/5 py-10 px-6">
+      <footer className="bg-slate-950 border-t border-white/5 py-10 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Logo className="w-8 h-8" />
