@@ -7,6 +7,8 @@
     "build:dev": "vite build --mode development",
     "dev": "vite",
     "build": "vite build",
+    "predev": "bunx tsx scripts/generate-sitemap.ts",
+    "prebuild": "bunx tsx scripts/generate-sitemap.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
