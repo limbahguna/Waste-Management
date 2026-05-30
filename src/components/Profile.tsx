@@ -15,6 +15,7 @@ export default function Profile() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
 
   const [editForm, setEditForm] = useState({
     full_name: '',
@@ -164,13 +165,50 @@ export default function Profile() {
 
   useEffect(() => {
     if (!loading && user && !profile) {
-      refreshProfile().catch((err: any) => {
-        setFetchError(err?.message || 'Failed to load profile');
-      });
+      (async () => {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('Profile not found for this account.');
+          await refreshProfile();
+        } catch (err: any) {
+          setFetchError(err?.message || 'Failed to load profile');
+        }
+      })();
     }
   }, [loading, user, profile]);
 
+  // Safety timeout: if still loading after 3s, surface an actionable state
+  useEffect(() => {
+    if (loading || (user && !profile && !fetchError)) {
+      const timer = setTimeout(() => setLoadTimedOut(true), 3000);
+      return () => clearTimeout(timer);
+    }
+    setLoadTimedOut(false);
+  }, [loading, user, profile, fetchError]);
+
   if (loading) {
+    if (loadTimedOut) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+          <div className="text-center">
+            <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Taking longer than expected</h2>
+            <p className="text-gray-500 mb-6 text-sm">Please log in to view your profile.</p>
+            <button
+              onClick={() => { window.location.hash = ''; window.location.reload(); }}
+              className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -218,6 +256,31 @@ export default function Profile() {
   }
 
   if (!profile) {
+    if (loadTimedOut) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+          <div className="text-center">
+            <div className="text-amber-500 text-4xl mb-4">⏱️</div>
+            <h2 className="text-xl font-bold text-gray-700 mb-2">Profile is taking too long to load</h2>
+            <p className="text-gray-500 mb-6 text-sm">Your session may have expired. Please try again or log in.</p>
+            <div className="flex flex-col gap-3 items-center">
+              <button
+                onClick={() => { setLoadTimedOut(false); setFetchError(null); refreshProfile(); }}
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl transition-colors w-48"
+              >
+                Retry
+              </button>
+              <button
+                onClick={async () => { await signOut(); window.location.hash = ''; }}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-8 rounded-xl transition-colors w-48"
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
