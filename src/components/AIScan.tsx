@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle, MapPin, DollarSign, Package, FileText } from 'lucide-react';
+import { Camera, Scan, Zap, Droplets, AlertCircle, CheckCircle2, Upload, Bot, AlertTriangle, Loader2, ArrowRight, Brain, Target, Bug, ChevronDown, ChevronUp, Copy, Check, RotateCcw, MessageCircle, MapPin, DollarSign, Package, FileText, FileTextIcon } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDebug } from '../contexts/DebugContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -103,6 +104,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
         decision: groqDecision,
         carbonSyncResult,
         debugData,
+        openRouterOutput,
       });
     }
   }, [perception, selectedImage, groqDecision, carbonSyncResult, debugData]);
@@ -166,6 +168,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
         setGroqDecision(null);
         setTechnicalData(null);
         setEcoPartnerMessage(null);
+        setOpenRouterOutput(null);
         setCarbonSyncResult(null);
         setActionLog([]);
       };

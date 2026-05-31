@@ -96,24 +96,13 @@ serve(async (req) => {
     if (!ROBOFLOW_API_KEY) throw new Error("ROBOFLOW_API_KEY is not configured");
     if (!ROBOFLOW_WORKFLOW_ID) throw new Error("ROBOFLOW_WORKFLOW_ID is not configured");
 
-    // Call Roboflow Workflow API — returns { outputs: [{ data: { technical_data, eco_partner_message, open_router_output, legacy } }] }
+    // Roboflow Workflow: key lives in the URL path
     const roboflowResponse = await fetch(
-      `https://detect.roboflow.com/workflow/${ROBOFLOW_WORKFLOW_ID}/infer`,
+      `https://detect.roboflow.com/workflow/${ROBOFLOW_WORKFLOW_ID}/${ROBOFLOW_API_KEY}/infer`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${ROBOFLOW_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          api_key: ROBOFLOW_API_KEY,
-          inputs: {
-            image: {
-              type: "base64",
-              value: imageBase64,
-            },
-          },
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: `data:image/jpeg;base64,${imageBase64}` }),
       }
     );
 
@@ -132,16 +121,25 @@ serve(async (req) => {
     }
 
     // Parse Roboflow Workflow response
-    // Expected shape: { outputs: [{ data: { technical_data, eco_partner_message, open_router_output, legacy } }] }
+    // Roboflow Workflow returns: { outputs: [{ data: { technical_data, eco_partner_message, open_router_output, legacy } }] }
+    // or alternatively: { outputs: [{ fields: { ... } }] } or a flat { data: { ... } }
     const roboflowJson = await roboflowResponse.json();
-    const outputs = roboflowJson?.outputs;
-    if (!outputs || !Array.isArray(outputs) || outputs.length === 0) {
-      throw new Error("Invalid Roboflow Workflow response: missing outputs");
+
+    let workflowData: Record<string, unknown> = {};
+
+    // Shape 1: { outputs: [{ data: { ... } }] }
+    if (Array.isArray(roboflowJson.outputs) && roboflowJson.outputs.length > 0) {
+      const first = roboflowJson.outputs[0];
+      workflowData = (first.data as Record<string, unknown>) || (first.fields as Record<string, unknown>) || {};
+    }
+    // Shape 2: flat { data: { ... } } or direct { ... }
+    if (Object.keys(workflowData).length === 0) {
+      workflowData = (roboflowJson.data as Record<string, unknown>) || roboflowJson;
     }
 
-    const workflowData = outputs[0]?.data;
-    if (!workflowData) {
-      throw new Error("Invalid Roboflow Workflow response: missing data in first output");
+    if (Object.keys(workflowData).length === 0) {
+      console.error("Roboflow response: could not locate workflow data.", JSON.stringify(roboflowJson).substring(0, 500));
+      throw new Error("Roboflow Workflow response was empty or malformed");
     }
 
     // Roboflow Workflow returns structured fields plus the markdown report
