@@ -56,10 +56,11 @@ interface CarbonSyncResult {
 
 interface ActionLogEntry {
   id: string;
-  type: 'perception' | 'decision' | 'action' | 'sync' | 'error' | 'groq';
+  type: 'perception' | 'decision' | 'action' | 'sync' | 'error' | 'groq' | 'openrouter';
   message: string;
   timestamp: Date;
   status: 'pending' | 'success' | 'error';
+  markdown?: boolean;
 }
 
 const SUPABASE_URL = 'https://ntcgtsnufvhtgaejuuzv.supabase.co';
@@ -79,6 +80,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
   const [groqDecision, setGroqDecision] = useState<GroqSortingDecision | null>(scanState.decision);
   const [technicalData, setTechnicalData] = useState<TechnicalData | null>(null);
   const [ecoPartnerMessage, setEcoPartnerMessage] = useState<string | null>(null);
+  const [openRouterOutput, setOpenRouterOutput] = useState<string | null>(null);
   const [carbonSyncResult, setCarbonSyncResult] = useState<CarbonSyncResult | null>(scanState.carbonSyncResult);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
   const [showDebug, setShowDebug] = useState(false);
@@ -105,13 +107,14 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
     }
   }, [perception, selectedImage, groqDecision, carbonSyncResult, debugData]);
 
-  const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending') => {
+  const addLogEntry = (type: ActionLogEntry['type'], message: string, status: ActionLogEntry['status'] = 'pending', markdown = false) => {
     const entry: ActionLogEntry = {
       id: Date.now().toString(),
       type,
       message,
       timestamp: new Date(),
       status,
+      markdown,
     };
     setActionLog((prev) => [...prev, entry]);
     return entry.id;
@@ -211,6 +214,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
       // Store new dual-output data
       if (data.technical_data) setTechnicalData(data.technical_data);
       if (data.eco_partner_message) setEcoPartnerMessage(data.eco_partner_message);
+      if (data.open_router_output) setOpenRouterOutput(data.open_router_output);
 
       updateLogEntry(analysisLogId, 'success');
       addLogEntry('perception', `${data.perception.wasteType} ${t('logDetected')}`, 'success');
@@ -218,12 +222,23 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
       const decisionLogId = addLogEntry('decision', t('logEvaluating'));
       await new Promise((resolve) => setTimeout(resolve, 300));
 
+      // Use technical_data for grade/status if available, fall back to legacy perception
+      const resolvedGrade = data.technical_data?.quality_grade || data.perception?.grade;
+      const resolvedConfidence = data.technical_data?.confidence ?? data.perception?.confidence;
+      const resolvedWasteCategory = data.technical_data?.waste_category || data.perception?.wasteGrade;
+
       if (data.perception.contamination?.detected) {
         updateLogEntry(decisionLogId, 'error');
         addLogEntry('decision', `⚠️ ${t('logContamination')}: ${data.perception.contamination.type}!`, 'error');
       } else {
         updateLogEntry(decisionLogId, 'success');
-        addLogEntry('decision', `Grade ${data.perception.grade} (${data.perception.confidence}% confidence)`, 'success');
+        addLogEntry('decision', `Grade ${resolvedGrade} (${resolvedConfidence}% confidence)`, 'success');
+      }
+
+      // Render AI Visual Assessment Report (markdown) from Roboflow Workflow
+      if (data.open_router_output) {
+        const reportLogId = addLogEntry('openrouter', data.open_router_output, 'pending', true);
+        updateLogEntry(reportLogId, 'success');
       }
 
       if (data.decision) {
@@ -259,6 +274,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
         decision: data.decision,
         technical_data: data.technical_data,
         eco_partner_message: data.eco_partner_message,
+        open_router_output: data.open_router_output,
       });
 
     } catch (error) {
@@ -278,6 +294,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
     setGroqDecision(null);
     setTechnicalData(null);
     setEcoPartnerMessage(null);
+    setOpenRouterOutput(null);
     setCarbonSyncResult(null);
     setActionLog([]);
     setDebugData(null);
@@ -301,6 +318,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
       case 'perception': return <Scan className="w-4 h-4 text-green-500" />;
       case 'decision': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
       case 'groq': return <Brain className="w-4 h-4 text-purple-500" />;
+      case 'openrouter': return <Brain className="w-4 h-4 text-cyan-400" />;
       case 'action': return <Bot className="w-4 h-4 text-green-500" />;
       case 'sync': return <Zap className="w-4 h-4 text-green-500" />;
       default: return <AlertCircle className="w-4 h-4 text-gray-500" />;
@@ -338,20 +356,20 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
       <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
-          <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception!.grade)}`}>Grade {perception!.grade}</span>
+          <span className={`${gradePillSize} ${gradeBadgeClass(gradeDisplay)}`}>Grade {gradeDisplay}</span>
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-2"><Scan className="w-5 h-5 text-emerald-600" /><span className="text-gray-700">{t('wasteCategory')}</span></div>
-            <span className="font-bold text-gray-800">{perception!.wasteType}</span>
+            <span className="font-bold text-gray-800">{technicalData?.waste_type || perception!.wasteType}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">{t('aiConfidence')}</span>
             <div className="flex items-center gap-2">
               <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${perception!.confidence}%` }}></div>
+                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${technicalData?.confidence ?? perception!.confidence}%` }}></div>
               </div>
-              <span className="font-bold text-emerald-600">{perception!.confidence}%</span>
+              <span className="font-bold text-emerald-600">{technicalData?.confidence ?? perception!.confidence}%</span>
             </div>
           </div>
         </div>
@@ -372,98 +390,184 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
     </div>
   );
 
-  // Producer/Admin full technical view
+  // ── Grade badge with glow ──────────────────────────────────────────────────
+  const gradeDisplay = technicalData?.quality_grade || perception?.grade;
+  const gradeBadgeClass = (g: string) => {
+    switch (g) {
+      case 'A': return 'bg-emerald-400 text-emerald-900 shadow-lg shadow-emerald-500/40 ring-2 ring-emerald-400/60';
+      case 'B': return 'bg-amber-400 text-amber-900 shadow-lg shadow-amber-500/40 ring-2 ring-amber-400/60';
+      case 'C': return 'bg-orange-500 text-white shadow-lg shadow-orange-500/40 ring-2 ring-orange-500/60';
+      default:  return 'bg-gray-400 text-gray-900';
+    }
+  };
+  const gradePillSize = 'text-2xl font-black px-6 py-3 rounded-2xl';
+
+  // ── Markdown → HTML for open_router_output ──────────────────────────────
+  const markdownToHtml = (md: string) =>
+    md
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-300 font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g,  '<em class="text-gray-300">$1</em>')
+      .replace(/^### (.*$)/gm, '<h4 class="text-cyan-200 font-bold mt-4 mb-1">$1</h4>')
+      .replace(/^## (.*$)/gm,  '<h3 class="text-cyan-400 font-bold mt-5 mb-2 border-b border-cyan-800/50 pb-1">$1</h3>')
+      .replace(/^# (.*$)/gm,  '<h2 class="text-white font-black text-lg mt-6 mb-3">$1</h2>')
+      .replace(/^- (.*$)/gm,   '<li class="ml-5 list-none mb-1 text-gray-200 leading-relaxed"><span class="text-emerald-400 mr-2">▸</span>$1</li>')
+      .replace(/^\d+\. (.*$)/gm,'<li class="ml-5 list-decimal mb-1 text-gray-200 leading-relaxed">$1</li>')
+      .replace(/\n{2,}/g,     '<br/><br/>')
+      .replace(/\n/g,         '<br/>');
+
+  // ── Timestamp for footer ───────────────────────────────────────────────
+  const scanTimestamp = (() => {
+    try { return new Date(debugData?.timestamp as string || Date.now()).toLocaleString(language === 'id' ? 'id-ID' : 'en-US'); }
+    catch { return new Date().toLocaleString(language === 'id' ? 'id-ID' : 'en-US'); }
+  })();
+
+  // Producer/Admin — premium industrial audit certificate
   const renderProducerResult = () => (
-    <div className="space-y-4 mb-6">
-      <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-800">{t('perceptionResult')}</h3>
-          <div className="flex items-center gap-2">
-            {perception!.wasteGrade && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">{perception!.wasteGrade}</span>
-            )}
-            <span className={`px-4 py-2 rounded-full font-bold ${getGradeColor(perception!.grade)}`}>Grade {perception!.grade}</span>
+    <div className="mb-6 space-y-4">
+
+      {/* ── 1. INDUSTRIAL AUDIT CERTIFICATE GRID ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        {/* LEFT — Grade & Confidence */}
+        <div className="bg-slate-900 rounded-2xl shadow-xl p-5 border border-slate-700 flex flex-col items-center justify-center text-center gap-4">
+          <div className="text-xs font-bold tracking-widest text-cyan-400 uppercase">{language === 'en' ? 'Quality Grade' : 'Grade Kualitas'}</div>
+          <div className={`${gradePillSize} ${gradeBadgeClass(gradeDisplay)}`}>
+            {language === 'en' ? 'Grade' : 'Grade'} {gradeDisplay}
           </div>
+          <div className="w-full space-y-1">
+            <div className="flex justify-between text-xs text-gray-400"><span>{language === 'en' ? 'AI Confidence' : 'Kepercayaan AI'}</span><span className="text-emerald-400 font-bold">{technicalData?.confidence ?? perception?.confidence}%</span></div>
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full" style={{ width: `${technicalData?.confidence ?? perception?.confidence}%` }} /></div>
+          </div>
+          {technicalData?.waste_category && <span className="text-xs font-mono bg-cyan-900/50 text-cyan-300 px-3 py-1 rounded-full">{technicalData.waste_category}</span>}
         </div>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-            <div className="flex items-center gap-2"><Scan className="w-5 h-5 text-emerald-600" /><span className="text-gray-700">{t('wasteCategory')}</span></div>
-            <span className="font-bold text-gray-800">{perception!.wasteType}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-            <div className="flex items-center gap-2"><Droplets className="w-5 h-5 text-blue-600" /><span className="text-gray-700">{t('moisture')}</span></div>
-            <span className="font-bold text-gray-800">{perception!.moisture}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-            <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-600" /><span className="text-gray-700">{t('calorificValue')}</span></div>
-            <span className="font-bold text-gray-800">{perception!.calorificValue}</span>
-          </div>
-          {perception!.contamination?.detected && (
-            <div className="p-4 bg-red-50 rounded-xl border border-red-200">
-              <div className="flex items-center gap-2 mb-1"><AlertTriangle className="w-5 h-5 text-red-600" /><span className="font-bold text-red-800">{t('contaminationAlert')}</span></div>
-              <p className="text-red-700">{perception!.contamination.type} detected</p>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">{t('aiConfidence')}</span>
-            <div className="flex items-center gap-2">
-              <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${perception!.confidence}%` }}></div>
+
+        {/* RIGHT — Biomass metrics */}
+        {(technicalData?.waste_category === 'BIOMASS' || technicalData?.waste_category === 'PALM_SHELL') && (
+          <div className="bg-slate-900 rounded-2xl shadow-xl p-5 border border-slate-700 space-y-4">
+            <div className="text-xs font-bold tracking-widest text-cyan-400 uppercase text-center">{language === 'en' ? 'Clean Energy Profile' : 'Profil Energi Bersih'}</div>
+            {/* Moisture */}
+            <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-3">
+              <span className="text-3xl">💧</span>
+              <div className="flex-1">
+                <p className="text-xs text-gray-400">{language === 'en' ? 'Moisture Content' : 'Kadar Air'}</p>
+                <p className="text-white font-bold text-lg">{technicalData?.moisture_content || perception?.moisture || '—'}</p>
               </div>
-              <span className="font-bold text-emerald-600">{perception!.confidence}%</span>
+            </div>
+            {/* Calorific */}
+            <div className="bg-slate-800 rounded-xl p-4 flex items-center gap-3">
+              <span className="text-3xl">🔥</span>
+              <div className="flex-1">
+                <p className="text-xs text-gray-400">{language === 'en' ? 'Calorific Value' : 'Nilai Kalori'}</p>
+                <p className="text-white font-bold text-lg">{technicalData?.calorific_value || perception?.calorificValue || '—'}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* RIGHT — Generic metrics (non-biomass) */}
+        {!['BIOMASS','PALM_SHELL'].includes(technicalData?.waste_category || '') && (
+          <div className="bg-slate-900 rounded-2xl shadow-xl p-5 border border-slate-700 space-y-3">
+            <div className="text-xs font-bold tracking-widest text-cyan-400 uppercase text-center mb-1">{language === 'en' ? 'Key Metrics' : 'Metrik Utama'}</div>
+            {[
+              { icon: <Droplets className="w-4 h-4 text-blue-400" />, label: language === 'en' ? 'Moisture' : 'Kadar Air', value: technicalData?.moisture_content || perception?.moisture || '—' },
+              { icon: <Zap className="w-4 h-4 text-yellow-400" />, label: language === 'en' ? 'Calorific Value' : 'Nilai Kalori', value: technicalData?.calorific_value || perception?.calorificValue || '—' },
+              { icon: <Target className="w-4 h-4 text-purple-400" />, label: language === 'en' ? 'Est. Value' : 'Estimasi Nilai', value: (groqDecision?.estimatedValue || technicalData?.estimated_value || '—') },
+            ].map(({ icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3 bg-slate-800 rounded-xl px-4 py-3">
+                {icon}
+                <div className="flex-1"><p className="text-xs text-gray-400">{label}</p><p className="text-white font-bold text-sm">{value}</p></div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* AI Decision Card - only for producers */}
-      {groqDecision && (
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl shadow-md p-6 border border-purple-200">
-          <div className="flex items-center gap-2 mb-4">
-            <Brain className="w-6 h-6 text-purple-600" />
-            <h3 className="font-bold text-gray-800">{t('groqDecisionTitle')}</h3>
-            <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(groqDecision.priority)}`}>
-              {groqDecision.priority} {t('priorityLabel')}
-            </span>
+      {/* ── 2. AI INDUSTRIAL AUDIT REPORT ── */}
+      {openRouterOutput && (
+        <div className="bg-gradient-to-br from-slate-900 via-cyan-950 to-emerald-950 rounded-2xl shadow-xl border border-cyan-500/40 overflow-hidden">
+          {/* Certificate Header */}
+          <div className="bg-gradient-to-r from-cyan-600 to-emerald-600 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🏭</span>
+              <div>
+                <p className="text-white font-black text-lg leading-tight">{language === 'en' ? 'AI INDUSTRIAL AUDIT REPORT' : 'LAPORAN AUDIT INDUSTRI AI'}</p>
+                <p className="text-cyan-100 text-xs font-medium">{technicalData?.waste_type || perception?.wasteType} · {language === 'en' ? 'Grade' : 'Grade'} {gradeDisplay}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-cyan-100 text-xs">CONF</p>
+              <p className="text-white font-black text-xl">{technicalData?.confidence ?? perception?.confidence}%</p>
+            </div>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-              <div className="flex items-center gap-2"><Bot className="w-5 h-5 text-purple-600" /><span className="text-gray-700">{t('robotCommandLabel')}</span></div>
-              <span className="font-bold text-purple-800">{groqDecision.robotCommand}</span>
+          {/* Report Body */}
+          <div className="px-6 py-5">
+            <div
+              className="text-sm text-gray-200 leading-7"
+              dangerouslySetInnerHTML={{ __html: markdownToHtml(openRouterOutput) }}
+            />
+          </div>
+          {/* Certificate Footer */}
+          <div className="border-t border-cyan-800/50 px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-cyan-300/70">
+              <Bot className="w-3.5 h-3.5" />
+              <span>{language === 'en' ? 'System powered by Limbahguna Multi-Agent Architecture & Roboflow Vision' : 'Sistem didukung oleh Arsitektur Multi-Agen Limbahguna & Visi Roboflow'}</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-              <div className="flex items-center gap-2"><Target className="w-5 h-5 text-purple-600" /><span className="text-gray-700">{t('targetBinLabel')}</span></div>
-              <span className="font-bold text-purple-800">{groqDecision.targetBin}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-white rounded-xl">
-              <div className="flex items-center gap-2"><Zap className="w-5 h-5 text-amber-600" /><span className="text-gray-700">{t('estimatedValueLabel')}</span></div>
-              <span className="font-bold text-amber-700">{groqDecision.estimatedValue}</span>
-            </div>
-            <div className="p-3 bg-purple-100/50 rounded-xl">
-              <p className="text-sm text-purple-800 font-medium mb-1">{t('aiReasoningLabel')}</p>
-              <p className="text-sm text-purple-700">{groqDecision.reasoning}</p>
+            <span className="text-xs text-cyan-400/50 font-mono">{scanTimestamp}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── 3. ROBOT DECISION CARD ── */}
+      {groqDecision && (
+        <div className="bg-white rounded-2xl shadow-md p-5 border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Brain className="w-5 h-5 text-purple-600" />
+            <h3 className="font-bold text-gray-800">{t('groqDecisionTitle')}</h3>
+            <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${getPriorityColor(groqDecision.priority)}`}>{groqDecision.priority} {t('priorityLabel')}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            {[
+              { label: t('robotCommandLabel'), value: groqDecision.robotCommand, icon: <Bot className="w-4 h-4 text-purple-600" /> },
+              { label: t('targetBinLabel'), value: groqDecision.targetBin, icon: <Target className="w-4 h-4 text-purple-600" /> },
+              { label: t('estimatedValueLabel'), value: groqDecision.estimatedValue, icon: <Zap className="w-4 h-4 text-amber-600" /> },
+            ].map(({ label, value, icon }) => (
+              <div key={label} className="bg-gray-50 rounded-xl p-3 flex flex-col gap-1">
+                <div className="flex items-center gap-1">{icon}<span className="text-xs text-gray-500">{label}</span></div>
+                <p className="text-sm font-bold text-gray-800">{value}</p>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <div className="p-3 bg-purple-50 rounded-xl">
+              <p className="text-xs text-purple-800 font-semibold mb-1">{t('aiReasoningLabel')}</p>
+              <p className="text-sm text-purple-700 leading-relaxed">{groqDecision.reasoning}</p>
             </div>
             {groqDecision.processingNotes && (
-              <div className="p-3 bg-indigo-100/50 rounded-xl">
-                <p className="text-sm text-indigo-800 font-medium mb-1">{t('processingNotesLabel')}</p>
-                <p className="text-sm text-indigo-700">{groqDecision.processingNotes}</p>
-              </div>
-            )}
-            {carbonSyncResult && (
-              <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-200">
-                <div className="flex items-center gap-3">
-                  <div className="bg-green-500 p-2 rounded-full"><CheckCircle2 className="w-5 h-5 text-white" /></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-green-800 font-bold">{t('carbonSyncSuccessTitle')}</p>
-                    <p className="text-lg font-bold text-green-700">🌱 {carbonSyncResult.carbonSaved} kg CO₂ {t('carbonSavedLabel')}</p>
-                  </div>
-                </div>
+              <div className="p-3 bg-indigo-50 rounded-xl">
+                <p className="text-xs text-indigo-800 font-semibold mb-1">{t('processingNotesLabel')}</p>
+                <p className="text-sm text-indigo-700 leading-relaxed">{groqDecision.processingNotes}</p>
               </div>
             )}
           </div>
-          <div className="mt-4 pt-3 border-t border-purple-200 flex items-center justify-center gap-2 text-xs text-purple-600">
-            <Brain className="w-3 h-3" />
-            <span>{language === 'en' ? 'Powered by Gemini 2.5 Flash' : 'Didukung oleh Gemini 2.5 Flash'}</span>
+          {carbonSyncResult && (
+            <div className="mt-3 p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl border border-green-200 flex items-center gap-3">
+              <div className="bg-green-500 p-2 rounded-full"><CheckCircle2 className="w-4 h-4 text-white" /></div>
+              <div className="flex-1">
+                <p className="text-xs text-green-800 font-bold">{t('carbonSyncSuccessTitle')}</p>
+                <p className="text-base font-black text-green-700">🌱 {carbonSyncResult.carbonSaved} kg CO₂</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 4. CONTAMINATION ALERT ── */}
+      {(technicalData?.contamination?.detected || perception?.contamination?.detected) && (
+        <div className="p-4 bg-red-950/50 rounded-2xl border border-red-500/40 flex items-center gap-3">
+          <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0" />
+          <div>
+            <p className="font-bold text-red-300">{t('contaminationAlert')}</p>
+            <p className="text-sm text-red-200/80">{language === 'en' ? 'Detected:' : 'Terdeteksi:'} {technicalData?.contamination?.type || perception?.contamination?.type}</p>
           </div>
         </div>
       )}
@@ -561,8 +665,24 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
               {actionLog.filter(entry => entry.type !== 'sync' && entry.type !== 'error').map((entry, index, filteredArr) => (
                 <div key={entry.id} className="flex items-start gap-3">
                   <div className="mt-1">{getLogIcon(entry.type, entry.status)}</div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-200">{entry.message}</p>
+                  <div className="flex-1 min-w-0">
+                    {entry.markdown ? (
+                      <div
+                        className="text-sm text-gray-200 space-y-1"
+                        dangerouslySetInnerHTML={{
+                          __html: entry.message
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-300">$1</strong>')
+                            .replace(/\*(.*?)\*/g, '<em class="text-gray-300">$1</em>')
+                            .replace(/^### (.*$)/gm, '<p class="font-bold text-cyan-200 mt-2">$1</p>')
+                            .replace(/^## (.*$)/gm, '<p class="font-bold text-cyan-400 mt-2">$1</p>')
+                            .replace(/^# (.*$)/gm, '<p class="font-bold text-white mt-2">$1</p>')
+                            .replace(/^- (.*$)/gm, '<li class="ml-4 text-gray-300">• $1</li>')
+                            .replace(/\n/g, '<br/>')
+                        }}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-200">{entry.message}</p>
+                    )}
                     <p className="text-xs text-gray-500">{entry.timestamp.toLocaleTimeString()}</p>
                   </div>
                   {index < filteredArr.length - 1 && <ArrowRight className="w-4 h-4 text-gray-600 mt-1" />}
@@ -743,10 +863,10 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
 
                   const { error } = await supabase.from('transactions').insert({
                     user_id: session.user.id,
-                    waste_type: perception!.wasteType,
+                    waste_type: technicalData?.waste_type || perception!.wasteType,
                     weight_kg: Number(estimatedVolume),
-                    grade: perception!.grade,
-                    confidence_score: perception!.confidence,
+                    grade: technicalData?.quality_grade || perception!.grade,
+                    confidence_score: technicalData?.confidence ?? perception!.confidence,
                     image_url: selectedImage,
                     description: offerNotes || null,
                     price_offer: Number(priceOffer),
@@ -767,6 +887,7 @@ export default function AIScan({ onContinueToSupply: _onContinueToSupply, onSend
                       contamination: technicalData.contamination,
                       confidence: technicalData.confidence,
                     } : null,
+                    open_router_output: openRouterOutput || null,
                   });
 
                   if (error) throw error;

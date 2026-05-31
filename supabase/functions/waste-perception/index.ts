@@ -91,203 +91,99 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const validLanguages = ["en", "id"];
-    const safeLanguage = validLanguages.includes(language as string) ? language : "id";
+    const ROBOFLOW_API_KEY = Deno.env.get("ROBOFLOW_API_KEY");
+    const ROBOFLOW_WORKFLOW_ID = Deno.env.get("ROBOFLOW_WORKFLOW_ID");
+    if (!ROBOFLOW_API_KEY) throw new Error("ROBOFLOW_API_KEY is not configured");
+    if (!ROBOFLOW_WORKFLOW_ID) throw new Error("ROBOFLOW_WORKFLOW_ID is not configured");
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const userLanguage = safeLanguage === 'en' ? 'English' : 'Indonesian';
-    const ecoLang = safeLanguage === 'en' ? 'EN' : 'ID';
-
-    const systemPrompt = `You are the core visual analysis engine for Limbahguna, a digital waste circulation platform. Analyze the uploaded waste image and determine its category, quality grade, and physical properties.
-
-You must output a STRICT JSON object with three main keys: "technical_data", "eco_partner_message", and "legacy".
-
-1. "technical_data": This is for the database and factory admins. It MUST always be in English. Include the following sub-keys:
-   "waste_type": Precise categorization (e.g., "PET Plastic", "Rice Husk", "Palm Kernel Shell").
-   "waste_category": One of: PALM_SHELL|BIOMASS|PLASTIC|GLASS|ORGANIC|BATTERY|CIRCUIT|E-WASTE|METAL|UNKNOWN
-   "quality_grade": "A"|"B"|"C" or null if unknown.
-   "moisture_content": Estimated percentage string (e.g., "15-20%").
-   "calorific_value": Estimated in kcal/kg string (e.g., "4200 kcal/kg"). Use "0 kcal/kg" for Glass/Battery/Circuit/E-Waste/Metal.
-   "robot_command": e.g., "MOVE_TO_BIN_1", "MOVE_TO_BIN_3", etc.
-   "target_bin": e.g., "BIN_1", "BIN_3", etc.
-   "priority": "HIGH"|"MEDIUM"|"LOW"|"EMERGENCY"
-   "ai_reasoning": Detailed English explanation of the material composition, contamination, and circular economy potential. Use "We" perspective.
-   "processing_notes": Special handling notes in English.
-   "estimated_value": "Premium"|"Standard"|"Low"|"Precious Metal Recovery"|"Toxic Prevention"|"Recyclable"|"Compostable"
-   "contamination": { "detected": true/false, "type": string or null }
-   "confidence": number 0-100
-
-2. "eco_partner_message": This is for the everyday grassroots waste collector. It must be a single, short, friendly, and non-technical sentence.
-   Language constraint: The current language is '${ecoLang}'.
-   - If '${ecoLang}' is 'ID', write this message in Indonesian.
-   - If '${ecoLang}' is 'EN', write it in English.
-   - If Grade A/B: Praise them (e.g., EN: "Great job! This is high quality and ready to recycle." / ID: "Wah, kualitas sampahmu sangat bagus dan siap didaur ulang!").
-   - If Grade C/Contaminated: Gently guide them (e.g., EN: "Please separate the plastic from the organic waste for a better price." / ID: "Yuk, pisahkan plastiknya agar harganya lebih mahal!").
-   - If UNKNOWN: Ask to retake (e.g., EN: "The photo is blurry, please retake it in a brighter spot." / ID: "Fotonya kurang jelas, coba foto ulang di tempat terang ya!").
-
-3. "legacy": For backward compatibility. Include:
-   "perception": {
-     "wasteType": same as technical_data.waste_type,
-     "wasteGrade": same as technical_data.waste_category,
-     "grade": same as technical_data.quality_grade or "C" if null,
-     "moisture": same as technical_data.moisture_content,
-     "calorificValue": same as technical_data.calorific_value,
-     "contamination": same as technical_data.contamination,
-     "confidence": same as technical_data.confidence
-   },
-   "decision": {
-     "robotCommand": same as technical_data.robot_command,
-     "targetBin": same as technical_data.target_bin,
-     "wasteGrade": same as technical_data.waste_category,
-     "priority": same as technical_data.priority,
-     "reasoning": "${userLanguage}" version of ai_reasoning (2-3 sentences using We/Kami),
-     "processingNotes": "${userLanguage}" version of processing_notes,
-     "estimatedValue": same as technical_data.estimated_value
-   }
-
-WASTE CATEGORIES & CODES:
-1. PALM_SHELL - Palm Kernel Shell / Cangkang Sawit (curved, hard, dark brown/black)
-2. BIOMASS - Wood pellet (cylindrical), sawdust (fine powder), wood chip (flat, light brown)
-3. PLASTIC - Bottles, bags, containers, packaging, transparent cups with thin walls/creases/ridges
-4. GLASS - Thick-walled transparent containers with heavy light refraction, rigid structure, thick rims
-5. ORGANIC - Food waste, garden waste, compostable
-6. BATTERY - Any battery type
-7. CIRCUIT - Circuit boards, PCBs, chips, wires
-8. E-WASTE - General electronics
-9. METAL - Metal scrap, cans, aluminum
-
-CRITICAL - TRANSPARENT OBJECT CLASSIFICATION:
-When you see a transparent cup or container, DO NOT default to UNKNOWN or MANUAL_INSPECTION. Actively analyze:
-- PLASTIC indicators: thin walls, creases, dents, crumples, surface deformities, textured ridges for grip, thin rims, printed logos, appears lightweight. If deformed/bent/crushed → definitively PLASTIC.
-- GLASS indicators: thick walls, heavy light refraction/glare, solid rigid structure, thick rims, cannot be crumpled, perfect thick cylindrical shape with heavy reflection.
-- Only use MANUAL_INSPECTION if image is too blurry, extremely dark, or completely lacks defining features.
-
-SORTING RULES:
-- BIOMASS Grade A → MOVE_TO_BIN_1, HIGH priority
-- BIOMASS Grade B → MOVE_TO_BIN_2, MEDIUM priority
-- BIOMASS Grade C → REJECT_TO_CONVEYOR, LOW priority
-- PALM_SHELL → MOVE_TO_BIN_2, HIGH priority
-- PLASTIC → MOVE_TO_BIN_3, MEDIUM priority
-- GLASS → MOVE_TO_BIN_8, MEDIUM priority
-- ORGANIC → MOVE_TO_BIN_4, MEDIUM priority
-- BATTERY → MOVE_TO_BIN_5, HIGH priority
-- CIRCUIT → MOVE_TO_BIN_6, HIGH priority
-- E-WASTE → MOVE_TO_BIN_7, HIGH priority
-- METAL → MOVE_TO_BIN_3, MEDIUM priority
-- Hazardous chemical → EMERGENCY_STOP, EMERGENCY priority
-
-MOISTURE & CALORIFIC VALUE (never N/A):
-- Estimate visually. Dry/light → "10-20%", Wet/dark → "30-45%"
-- Wood Pellet: 4000-4200 kcal/kg (A), 3800-4000 (B/C)
-- Palm Shell: 4200-4500 (A), 3800-4200 (B/C)
-- Plastic: 5000-8000, Organic: 1500-2500, Glass: 0 kcal/kg
-- Battery/Circuit/E-Waste/Metal: 0 kcal/kg
-
-Return ONLY valid JSON. No markdown, no code blocks, just the JSON object.`;
-
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        max_tokens: 4096,
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Analyze this waste image. Return the unified JSON with technical_data, eco_partner_message, and legacy keys." },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-            ],
+    // Call Roboflow Workflow API — returns { outputs: [{ data: { technical_data, eco_partner_message, open_router_output, legacy } }] }
+    const roboflowResponse = await fetch(
+      `https://server.roboflow.com/workflow/${ROBOFLOW_WORKFLOW_ID}/infer`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${ROBOFLOW_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          api_key: ROBOFLOW_API_KEY,
+          inputs: {
+            image: {
+              type: "base64",
+              value: imageBase64,
+            },
           },
-        ],
-      }),
-    });
+        }),
+      }
+    );
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", aiResponse.status, errorText);
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "AI rate limit exceeded" }),
+    if (!roboflowResponse.ok) {
+      const errorText = await roboflowResponse.text();
+      console.error("Roboflow Workflow error:", roboflowResponse.status, errorText);
+      if (roboflowResponse.status === 429) {
+        return new Response(JSON.stringify({ error: "Roboflow rate limit exceeded" }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted" }),
+      if (roboflowResponse.status === 402) {
+        return new Response(JSON.stringify({ error: "Roboflow credits exhausted" }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
+      throw new Error(`Roboflow Workflow error: ${roboflowResponse.status}`);
     }
 
-    // Parse the non-streamed response
-    const aiJson = await aiResponse.json();
-    const fullContent = aiJson.choices?.[0]?.message?.content || "";
-
-    // Robust JSON extraction - strip markdown code blocks and find JSON boundaries
-    function extractJsonFromResponse(response: string): unknown {
-      let cleaned = response
-        .replace(/```json\s*/gi, "")
-        .replace(/```\s*/g, "")
-        .trim();
-
-      const jsonStart = cleaned.search(/[\{\[]/);
-      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === '[' ? ']' : '}');
-
-      if (jsonStart === -1 || jsonEnd === -1) {
-        console.error("No JSON object found in response:", cleaned.substring(0, 200));
-        throw new Error("No JSON object found in response");
-      }
-
-      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-
-      try {
-        return JSON.parse(cleaned);
-      } catch (_e) {
-        console.error("JSON parse failed, attempting repair...");
-        cleaned = cleaned
-          .replace(/,\s*}/g, "}")
-          .replace(/,\s*]/g, "]")
-          .replace(/[\x00-\x1F\x7F]/g, "");
-        try {
-          return JSON.parse(cleaned);
-        } catch (repairError) {
-          console.error("Failed to parse JSON even after repair:", repairError, "Raw:", cleaned.substring(0, 300));
-          throw new Error("Failed to parse AI response after repair");
-        }
-      }
+    // Parse Roboflow Workflow response
+    // Expected shape: { outputs: [{ data: { technical_data, eco_partner_message, open_router_output, legacy } }] }
+    const roboflowJson = await roboflowResponse.json();
+    const outputs = roboflowJson?.outputs;
+    if (!outputs || !Array.isArray(outputs) || outputs.length === 0) {
+      throw new Error("Invalid Roboflow Workflow response: missing outputs");
     }
 
-    let result;
-    try {
-      result = extractJsonFromResponse(fullContent) as Record<string, unknown>;
-    } catch (e) {
-      console.error("Full AI response that failed parsing:", fullContent.substring(0, 500));
-      throw e;
+    const workflowData = outputs[0]?.data;
+    if (!workflowData) {
+      throw new Error("Invalid Roboflow Workflow response: missing data in first output");
     }
 
-    console.log("[DEBUG] Parsed technical_data keys:", result.technical_data ? Object.keys(result.technical_data as Record<string, unknown>) : "MISSING");
+    // Roboflow Workflow returns structured fields plus the markdown report
+    const {
+      technical_data,
+      eco_partner_message,
+      open_router_output,
+      legacy,
+    } = workflowData as {
+      technical_data?: Record<string, unknown>;
+      eco_partner_message?: string;
+      open_router_output?: string;
+      legacy?: { perception?: unknown; decision?: unknown };
+    };
 
-    const technicalData = result.technical_data;
-    const ecoPartnerMessage = result.eco_partner_message;
-    const perception = result.legacy?.perception || result.perception;
-    const decision = result.legacy?.decision || result.decision;
+    // Fall back to top-level fields if not nested under workflow data keys
+    const td = technical_data || (workflowData as Record<string, unknown>).technical_data as Record<string, unknown> | undefined;
+    const epm = eco_partner_message || (workflowData as Record<string, unknown>).eco_partner_message as string | undefined;
+    const orOutput = open_router_output || (workflowData as Record<string, unknown>).open_router_output as string | undefined;
+    const perception = (legacy?.perception || (workflowData as Record<string, unknown>).perception) as Record<string, unknown> | undefined;
+    const decision = (legacy?.decision || (workflowData as Record<string, unknown>).decision) as Record<string, unknown> | undefined;
+
+    if (!td && !perception) {
+      console.error("Roboflow response missing both technical_data and legacy.perception:", JSON.stringify(workflowData).substring(0, 500));
+      throw new Error("Roboflow Workflow did not return technical data or legacy perception");
+    }
+
+    console.log("[DEBUG] Roboflow technical_data keys:", td ? Object.keys(td) : "MISSING");
+    console.log("[DEBUG] open_router_output present:", !!orOutput);
 
     // Calculate carbon savings
-    const wasteGradeCode = technicalData?.waste_category || decision?.wasteGrade || perception?.wasteGrade || 'default';
-    const gradeKey = technicalData?.quality_grade || perception?.grade || 'B';
+    const wasteGradeCode = (td?.waste_category as string) || (decision?.wasteGrade as string) || (perception?.wasteGrade as string) || 'default';
+    const gradeKey = (td?.quality_grade as string) || (perception?.grade as string) || 'B';
     const typeFactors = CARBON_FACTORS[wasteGradeCode] || CARBON_FACTORS['default'];
     const factor = typeFactors[gradeKey] || typeFactors['B'];
     const carbonSaved = parseFloat((1 * factor).toFixed(2));
 
     // Generate robot command for legacy compatibility
     const robotCommand = {
-      action: technicalData?.robot_command || decision?.robotCommand || "REJECT_TO_CONVEYOR",
-      targetBin: technicalData?.target_bin ? parseInt(technicalData.target_bin.replace('BIN_', '')) || null : null,
-      priority: technicalData?.priority === 'EMERGENCY' ? 'emergency' : technicalData?.priority === 'HIGH' ? 'high' : 'normal',
+      action: (td?.robot_command as string) || (decision?.robotCommand as string) || "REJECT_TO_CONVEYOR",
+      targetBin: td?.target_bin ? parseInt((td.target_bin as string).replace('BIN_', '')) || null : null,
+      priority: td?.priority === 'EMERGENCY' ? 'emergency' : td?.priority === 'HIGH' ? 'high' : 'normal',
       timestamp: new Date().toISOString(),
       perceptionData: perception,
     };
@@ -312,20 +208,21 @@ Return ONLY valid JSON. No markdown, no code blocks, just the JSON object.`;
       }
     }
 
-    console.log(`[AUDIT] User ${user.id} scanned: ${technicalData?.waste_type || perception?.wasteType}, Grade: ${technicalData?.quality_grade || perception?.grade}, Carbon: ${carbonSaved}kg`);
+    console.log(`[AUDIT] User ${user.id} scanned: ${td?.waste_type || perception?.wasteType}, Grade: ${td?.quality_grade || perception?.grade}, Carbon: ${carbonSaved}kg`);
 
     return new Response(JSON.stringify({
       success: true,
       // New dual-output fields
-      technical_data: technicalData,
-      eco_partner_message: ecoPartnerMessage,
+      technical_data: td,
+      eco_partner_message: epm,
+      open_router_output: orOutput,
       // Legacy fields for backward compatibility
       perception,
       decision,
       robotCommand,
       carbonSaved,
       vultrSyncStatus,
-      model: "google/gemini-2.5-flash",
+      model: "roboflow-workflow",
       timestamp: new Date().toISOString(),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
