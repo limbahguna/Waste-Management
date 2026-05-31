@@ -98,7 +98,7 @@ serve(async (req) => {
 
     // Call Roboflow Workflow API — returns { outputs: [{ data: { technical_data, eco_partner_message, open_router_output, legacy } }] }
     const roboflowResponse = await fetch(
-      `https://server.roboflow.com/workflow/${ROBOFLOW_WORKFLOW_ID}/infer`,
+      `https://detect.roboflow.com/workflow/${ROBOFLOW_WORKFLOW_ID}/infer`,
       {
         method: "POST",
         headers: {
